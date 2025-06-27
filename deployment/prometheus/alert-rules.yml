@@ -1,0 +1,83 @@
+groups:
+- name: renexus-alerts
+  rules:
+  - alert: InstanceDown
+    expr: up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance {{ $labels.instance }} down"
+      description: "{{ $labels.instance }} has been down for more than 1 minute."
+
+  - alert: HighCPUUsage
+    expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage on {{ $labels.instance }}"
+      description: "{{ $labels.instance }} has high CPU usage (> 80%) for more than 5 minutes."
+
+  - alert: HighMemoryUsage
+    expr: (node_memory_MemTotal_bytes - node_memory_MemFree_bytes - node_memory_Buffers_bytes - node_memory_Cached_bytes) / node_memory_MemTotal_bytes * 100 > 85
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High memory usage on {{ $labels.instance }}"
+      description: "{{ $labels.instance }} has high memory usage (> 85%) for more than 5 minutes."
+
+  - alert: HighDiskUsage
+    expr: 100 - ((node_filesystem_avail_bytes{mountpoint="/"} * 100) / node_filesystem_size_bytes{mountpoint="/"}) > 85
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High disk usage on {{ $labels.instance }}"
+      description: "{{ $labels.instance }} has high disk usage (> 85%) for more than 5 minutes."
+
+  - alert: APIHighResponseTime
+    expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)) > 0.5
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "API high response time"
+      description: "API p95 response time is above 500ms for more than 5 minutes."
+
+  - alert: APIHighErrorRate
+    expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100 > 5
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "API high error rate"
+      description: "API error rate is above 5% for more than 5 minutes."
+
+  - alert: DatabaseConnectionPoolExhausted
+    expr: max_over_time(pg_stat_activity_count{datname="renexus"}[5m]) / pg_settings_max_connections * 100 > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Database connection pool nearly exhausted"
+      description: "Database connection pool usage is above 80% for more than 5 minutes."
+
+  - alert: RedisHighMemoryUsage
+    expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Redis high memory usage"
+      description: "Redis memory usage is above 80% for more than 5 minutes."
+
+  - alert: TooManyRedisConnections
+    expr: redis_connected_clients > 100
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Too many Redis connections"
+      description: "Redis has more than 100 connections for more than 5 minutes."
