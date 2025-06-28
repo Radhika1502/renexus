@@ -17,7 +17,7 @@ const dbConfig = {
   port: process.env.DB_PORT || 5432,
   database: isTest ? process.env.TEST_DB_NAME || 'renexus_test' : process.env.DB_NAME || 'renexus',
   user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
+  password: process.env.DB_PASSWORD || 'root',
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // How long a client is allowed to remain idle before being closed
   connectionTimeoutMillis: 2000, // How long to wait for a connection

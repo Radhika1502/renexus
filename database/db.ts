@@ -7,7 +7,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 // Database connection configuration
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/renexus';
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:root@localhost:5432/renexus';
 
 // Create connection pool
 export const pool = new Pool({

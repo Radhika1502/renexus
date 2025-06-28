@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Task } from '../types';
 import { useTasks } from '../hooks/useTasks';
-import { TaskFilters } from './TaskFilters';
 import { TaskFilters as FilterOptions } from '../types';
-import { Alert, Button, Skeleton } from '@renexus/ui-components';
-import { Plus } from 'lucide-react';
+import { Alert, Button, Skeleton, Checkbox } from '@renexus/ui-components';
+import { Plus, CheckSquare, Filter } from 'lucide-react';
+import { useTaskSelection } from '../context/TaskSelectionContext';
+import { BulkOperationsBar } from './BulkOperationsBar';
+import { FilterBar } from './FilterBar';
+import { AdvancedFiltersDialog } from './AdvancedFiltersDialog';
+import { SavedViewDialog } from './SavedViewDialog';
+import { SavedViewProvider, useSavedViewContext } from '../context/SavedViewContext';
+import { AdvancedFilterOptions } from '../types/savedViews';
 
 interface TaskListProps {
   projectId?: string;
@@ -12,15 +18,28 @@ interface TaskListProps {
   onSelectTask?: (task: Task) => void;
 }
 
-export const TaskList: React.FC<TaskListProps> = ({
+const TaskListContent: React.FC<TaskListProps> = ({
   projectId,
   onCreateTask,
   onSelectTask,
 }) => {
-  const [filters, setFilters] = React.useState<FilterOptions>({
-    projectId,
-    status: ['todo', 'inProgress', 'review'],
-  });
+  const { 
+    isSelectMode, 
+    toggleSelectMode, 
+    selectAll, 
+    clearSelection, 
+    selectedTaskIds,
+    selectionCount,
+    toggleTaskSelection
+  } = useTaskSelection();
+
+  const {
+    getCurrentFilters,
+    setCurrentFilters,
+    saveCurrentFilters
+  } = useSavedViewContext();
+
+  const filters = getCurrentFilters();
   
   const { 
     tasks, 
@@ -29,8 +48,25 @@ export const TaskList: React.FC<TaskListProps> = ({
     refetch 
   } = useTasks(filters);
 
+  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
+  const [isSaveViewDialogOpen, setIsSaveViewDialogOpen] = useState(false);
+
   const handleFilterChange = (newFilters: FilterOptions) => {
-    setFilters({ ...filters, ...newFilters });
+    setCurrentFilters({ ...filters, ...newFilters });
+  };
+  
+  const handleTaskSelection = (taskId: string) => {
+    if (isSelectMode) {
+      toggleTaskSelection(taskId);
+    }
+  };
+
+  const handleAdvancedFiltersChange = (advancedFilters: AdvancedFilterOptions) => {
+    setCurrentFilters({ ...filters, ...advancedFilters });
+  };
+
+  const handleSaveView = (name: string, description: string, isGlobal: boolean) => {
+    saveCurrentFilters(name, description, isGlobal);
   };
 
   if (isError) {
@@ -46,21 +82,43 @@ export const TaskList: React.FC<TaskListProps> = ({
     );
   }
 
+  const handleSelectAll = () => {
+    if (tasks && tasks.length > 0) {
+      if (selectedTaskIds.length === tasks.length) {
+        clearSelection();
+      } else {
+        selectAll(tasks.map(task => task.id));
+      }
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Tasks</h2>
-        {onCreateTask && (
-          <Button onClick={onCreateTask}>
-            <Plus className="h-4 w-4 mr-1" />
-            Create Task
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            onClick={toggleSelectMode}
+            className={isSelectMode ? 'bg-primary/10' : ''}
+          >
+            <CheckSquare className="h-4 w-4 mr-1" />
+            {isSelectMode ? 'Cancel Selection' : 'Select Tasks'}
           </Button>
-        )}
+          {onCreateTask && (
+            <Button onClick={onCreateTask}>
+              <Plus className="h-4 w-4 mr-1" />
+              Create Task
+            </Button>
+          )}
+        </div>
       </div>
 
-      <TaskFilters 
-        filters={filters} 
-        onFilterChange={handleFilterChange} 
+      <FilterBar
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        projectId={projectId}
+        onOpenAdvancedFilters={() => setIsAdvancedFiltersOpen(true)}
       />
 
       <div className="bg-white dark:bg-gray-800 rounded-lg border shadow-sm overflow-hidden">
@@ -68,7 +126,19 @@ export const TaskList: React.FC<TaskListProps> = ({
           <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Task
+                {isSelectMode ? (
+                  <div className="flex items-center">
+                    <Checkbox
+                      checked={tasks && tasks.length > 0 && selectedTaskIds.length === tasks.length}
+                      onClick={handleSelectAll}
+                      className="mr-2"
+                      aria-label="Select all tasks"
+                    />
+                    <span>Task {selectionCount > 0 && `(${selectionCount} selected)`}</span>
+                  </div>
+                ) : (
+                  'Task'
+                )}
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Status
@@ -110,11 +180,22 @@ export const TaskList: React.FC<TaskListProps> = ({
               tasks.map((task) => (
                 <tr 
                   key={task.id} 
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                  onClick={() => onSelectTask?.(task)}
+                  className={`hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${selectedTaskIds.includes(task.id) ? 'bg-primary/5' : ''}`}
+                  onClick={() => isSelectMode ? null : onSelectTask?.(task)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
+                      {isSelectMode && (
+                        <Checkbox
+                          checked={selectedTaskIds.includes(task.id)}
+                          onClick={(e: React.MouseEvent) => {
+                            e.stopPropagation();
+                            handleTaskSelection(task.id);
+                          }}
+                          className="mr-2"
+                          aria-label={`Select ${task.title}`}
+                        />
+                      )}
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
                         {task.title}
                       </div>
@@ -197,6 +278,44 @@ export const TaskList: React.FC<TaskListProps> = ({
           </tbody>
         </table>
       </div>
+      {isSelectMode && selectedTaskIds.length > 0 && (
+        <BulkOperationsBar 
+          selectedTaskIds={selectedTaskIds}
+          onClearSelection={clearSelection}
+          onExitSelectMode={toggleSelectMode}
+        />
+      )}
+
+      <AdvancedFiltersDialog
+        isOpen={isAdvancedFiltersOpen}
+        onClose={() => setIsAdvancedFiltersOpen(false)}
+        initialFilters={filters}
+        onApplyFilters={handleAdvancedFiltersChange}
+        onSaveView={() => setIsSaveViewDialogOpen(true)}
+      />
+
+      <SavedViewDialog
+        isOpen={isSaveViewDialogOpen}
+        onClose={() => setIsSaveViewDialogOpen(false)}
+        onSave={handleSaveView}
+      />
     </div>
+  );
+};
+
+export const TaskList: React.FC<TaskListProps> = (props) => {
+  const initialFilters: FilterOptions = {
+    projectId: props.projectId,
+    status: ['todo', 'inProgress', 'review'],
+  };
+
+  return (
+    <SavedViewProvider
+      projectId={props.projectId}
+      initialFilters={initialFilters}
+      onFiltersChange={() => {}}
+    >
+      <TaskListContent {...props} />
+    </SavedViewProvider>
   );
 };

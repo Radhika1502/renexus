@@ -1,12 +1,14 @@
 import React from 'react';
 import { Task, TaskPriority } from '../types';
-import { Badge, Tooltip } from '@renexus/ui-components';
+import { Badge, Tooltip, Checkbox } from '@renexus/ui-components';
 import { formatDate } from '../utils';
 import { AlertCircle, ArrowUp, ArrowDown, Clock, MessageSquare, Paperclip } from 'lucide-react';
+import { useTaskSelection } from '../context/TaskSelectionContext';
 
 interface TaskCardProps {
   task: Task;
   onClick?: () => void;
+  disableSelection?: boolean;
 }
 
 const getPriorityIcon = (priority: TaskPriority) => {
@@ -26,26 +28,52 @@ const getPriorityIcon = (priority: TaskPriority) => {
   }
 };
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, disableSelection = false }) => {
+  const { isSelectMode, toggleTaskSelection, isSelected } = useTaskSelection();
+  const selected = isSelected(task.id);
+  
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleTaskSelection(task.id);
+  };
   return (
     <div
-      className="bg-white dark:bg-gray-800 border rounded-md p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-      onClick={onClick}
+      className={`bg-white dark:bg-gray-800 border rounded-md p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${selected ? 'ring-2 ring-primary' : ''}`}
+      onClick={(e) => {
+        if (isSelectMode && !disableSelection) {
+          toggleTaskSelection(task.id);
+        } else {
+          onClick?.();
+        }
+      }}
       tabIndex={0}
       role="button"
-      aria-label={`View ${task.title} task details`}
+      aria-label={`${isSelectMode ? 'Select' : 'View'} ${task.title} task details`}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          onClick?.();
+          if (isSelectMode && !disableSelection) {
+            toggleTaskSelection(task.id);
+          } else {
+            onClick?.();
+          }
         }
       }}
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center">
-          <Tooltip content={`Priority: ${task.priority}`}>
-            <span className="mr-1.5">{getPriorityIcon(task.priority)}</span>
-          </Tooltip>
+          {isSelectMode && !disableSelection ? (
+            <Checkbox
+              checked={selected}
+              onClick={handleCheckboxClick}
+              className="mr-2"
+              aria-label={`Select ${task.title}`}
+            />
+          ) : (
+            <Tooltip content={`Priority: ${task.priority}`}>
+              <span className="mr-1.5">{getPriorityIcon(task.priority)}</span>
+            </Tooltip>
+          )}
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {task.projectKey}-{task.id.substring(0, 4)}
           </span>
