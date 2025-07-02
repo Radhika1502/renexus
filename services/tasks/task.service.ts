@@ -1,502 +1,351 @@
 import { db } from '../../db';
-import { tasks, taskAssignees, users, projects } from '../../db/schema';
-import { eq, and, or, desc, asc } from 'drizzle-orm';
-import { z } from 'zod';
+import { tasks, taskDependencies, timeEntries, taskAttachments } from '../../db/schema';
+import { eq, and, or, like, desc, asc } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Task status enum
- */
-export enum TaskStatus {
-  TODO = 'todo',
-  IN_PROGRESS = 'in_progress',
-  REVIEW = 'review',
-  DONE = 'done',
-  ARCHIVED = 'archived',
-}
-
-/**
- * Task priority enum
- */
-export enum TaskPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  URGENT = 'urgent',
-}
-
-/**
- * Create task schema
- */
-export const createTaskSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(255),
-  description: z.string().optional(),
-  status: z.nativeEnum(TaskStatus).default(TaskStatus.TODO),
-  priority: z.nativeEnum(TaskPriority).default(TaskPriority.MEDIUM),
-  dueDate: z.date().optional(),
-  projectId: z.string().uuid('Invalid project ID'),
-  assigneeIds: z.array(z.string().uuid('Invalid assignee ID')).optional(),
-  tenantId: z.string().uuid('Invalid tenant ID'),
-  createdBy: z.string().uuid('Invalid user ID'),
-  metadata: z.record(z.string(), z.any()).optional(),
-});
-
-/**
- * Update task schema
- */
-export const updateTaskSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(255).optional(),
-  description: z.string().optional(),
-  status: z.nativeEnum(TaskStatus).optional(),
-  priority: z.nativeEnum(TaskPriority).optional(),
-  dueDate: z.date().optional(),
-  metadata: z.record(z.string(), z.any()).optional(),
-});
-
-/**
- * Task filter schema
- */
-export const taskFilterSchema = z.object({
-  status: z.nativeEnum(TaskStatus).optional(),
-  priority: z.nativeEnum(TaskPriority).optional(),
-  assigneeId: z.string().uuid('Invalid assignee ID').optional(),
-  projectId: z.string().uuid('Invalid project ID').optional(),
-  search: z.string().optional(),
-  sortBy: z.enum(['dueDate', 'priority', 'status', 'createdAt']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
-});
-
-/**
- * Task Service
- * Handles task management operations
- */
 export class TaskService {
   /**
-   * Create a new task
-   * @param taskData Task data
-   * @returns Created task
+   * Get all tasks for a tenant with optional filtering and pagination
    */
-  async createTask(taskData: z.infer<typeof createTaskSchema>) {
-    // Verify project exists and belongs to tenant
-    const project = await db.query.projects.findFirst({
-      where: and(
-        eq(projects.id, taskData.projectId),
-        eq(projects.tenantId, taskData.tenantId)
-      ),
-    });
-    
-    if (!project) {
-      throw new Error('Project not found');
-    }
-    
-    // Create task
-    const taskId = uuidv4();
-    const [task] = await db.insert(tasks).values({
-      id: taskId,
-      title: taskData.title,
-      description: taskData.description || '',
-      status: taskData.status,
-      priority: taskData.priority,
-      dueDate: taskData.dueDate,
-      projectId: taskData.projectId,
-      tenantId: taskData.tenantId,
-      createdBy: taskData.createdBy,
-      metadata: taskData.metadata || {},
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning();
-    
-    // Assign task to users if assigneeIds provided
-    if (taskData.assigneeIds && taskData.assigneeIds.length > 0) {
-      const assignees = await Promise.all(
-        taskData.assigneeIds.map(async (assigneeId) => {
-          const [assignee] = await db.insert(taskAssignees).values({
-            id: uuidv4(),
-            taskId,
-            userId: assigneeId,
-            assignedBy: taskData.createdBy,
-            createdAt: new Date(),
-          }).returning();
-          
-          return assignee;
-        })
-      );
+  async getTasksByTenant(tenantId: string, options: any = {}) {
+    try {
+      const { 
+        page = 1, 
+        limit = 20, 
+        status, 
+        priority, 
+        projectId, 
+        assigneeId,
+        search,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
+      } = options;
       
-      return { ...task, assignees };
+      const offset = (page - 1) * limit;
+      
+      // Build where conditions
+      let whereConditions = [eq(tasks.tenantId, tenantId)];
+      
+      if (status) {
+        whereConditions.push(eq(tasks.status, status));
+      }
+      
+      if (priority) {
+        whereConditions.push(eq(tasks.priority, priority));
+      }
+      
+      if (projectId) {
+        whereConditions.push(eq(tasks.projectId, projectId));
+      }
+      
+      if (assigneeId) {
+        whereConditions.push(eq(tasks.assigneeId, assigneeId));
+      }
+      
+      if (search) {
+        whereConditions.push(
+          or(
+            like(tasks.title, `%${search}%`),
+            like(tasks.description, `%${search}%`)
+          )
+        );
+      }
+      
+      // Build sort conditions
+      const sortField = tasks[sortBy as keyof typeof tasks] || tasks.createdAt;
+      const sortDirection = sortOrder === 'asc' ? asc : desc;
+      
+      // Execute query
+      const results = await db.select().from(tasks)
+        .where(and(...whereConditions))
+        .orderBy(sortDirection(sortField))
+        .limit(limit)
+        .offset(offset);
+      
+      // Get total count for pagination
+      const countResult = await db.select({ count: db.fn.count() }).from(tasks)
+        .where(and(...whereConditions));
+      
+      const totalCount = Number(countResult[0].count);
+      const totalPages = Math.ceil(totalCount / limit);
+      
+      return {
+        data: results,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages
+        }
+      };
+    } catch (error) {
+      console.error('Error getting tasks by tenant:', error);
+      throw error;
     }
-    
-    return task;
   }
   
   /**
-   * Get task by ID
-   * @param taskId Task ID
-   * @param tenantId Tenant ID
-   * @returns Task with assignees
+   * Get a single task by ID
    */
   async getTaskById(taskId: string, tenantId: string) {
-    // Get task
-    const task = await db.query.tasks.findFirst({
-      where: and(
-        eq(tasks.id, taskId),
-        eq(tasks.tenantId, tenantId)
-      ),
-    });
-    
-    if (!task) {
-      throw new Error('Task not found');
+    try {
+      const result = await db.select().from(tasks)
+        .where(and(
+          eq(tasks.id, taskId),
+          eq(tasks.tenantId, tenantId)
+        ))
+        .limit(1);
+      
+      if (result.length === 0) {
+        throw new Error('Task not found');
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error getting task by ID:', error);
+      throw error;
     }
-    
-    // Get task assignees
-    const assignees = await db
-      .select({
-        id: taskAssignees.id,
-        userId: taskAssignees.userId,
-        assignedBy: taskAssignees.assignedBy,
-        createdAt: taskAssignees.createdAt,
-        user: {
-          id: users.id,
-          email: users.email,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          avatarUrl: users.avatarUrl,
-        },
-      })
-      .from(taskAssignees)
-      .innerJoin(users, eq(taskAssignees.userId, users.id))
-      .where(eq(taskAssignees.taskId, taskId));
-    
-    return { ...task, assignees };
   }
   
   /**
-   * Update task
-   * @param taskId Task ID
-   * @param taskData Task data
-   * @param tenantId Tenant ID
-   * @returns Updated task
+   * Create a new task
    */
-  async updateTask(taskId: string, taskData: z.infer<typeof updateTaskSchema>, tenantId: string) {
-    // Verify task exists and belongs to tenant
-    await this.getTaskById(taskId, tenantId);
-    
-    // Update task
-    const [updatedTask] = await db.update(tasks)
-      .set({
-        ...taskData,
-        updatedAt: new Date(),
-      })
-      .where(and(
-        eq(tasks.id, taskId),
-        eq(tasks.tenantId, tenantId)
-      ))
-      .returning();
-    
-    // Get task assignees
-    const assignees = await db
-      .select({
-        id: taskAssignees.id,
-        userId: taskAssignees.userId,
-        assignedBy: taskAssignees.assignedBy,
-        createdAt: taskAssignees.createdAt,
-        user: {
-          id: users.id,
-          email: users.email,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          avatarUrl: users.avatarUrl,
-        },
-      })
-      .from(taskAssignees)
-      .innerJoin(users, eq(taskAssignees.userId, users.id))
-      .where(eq(taskAssignees.taskId, taskId));
-    
-    return { ...updatedTask, assignees };
+  async createTask(taskData: any, tenantId: string, userId: string) {
+    try {
+      const { title, description, status, priority, projectId, assigneeId, dueDate } = taskData;
+      
+      if (!title) {
+        throw new Error('Task title is required');
+      }
+      
+      const newTask = {
+        id: uuidv4(),
+        tenantId,
+        title,
+        description: description || '',
+        status: status || 'todo',
+        priority: priority || 'medium',
+        projectId: projectId || null,
+        assigneeId: assigneeId || null,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        createdBy: userId,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const result = await db.insert(tasks).values(newTask).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating task:', error);
+      throw error;
+    }
   }
   
   /**
-   * Delete task
-   * @param taskId Task ID
-   * @param tenantId Tenant ID
+   * Update an existing task
+   */
+  async updateTask(taskId: string, taskData: any, tenantId: string) {
+    try {
+      // First check if task exists and belongs to tenant
+      const existingTask = await this.getTaskById(taskId, tenantId);
+      
+      if (!existingTask) {
+        throw new Error('Task not found');
+      }
+      
+      const updatedTask = {
+        ...taskData,
+        updatedAt: new Date()
+      };
+      
+      const result = await db.update(tasks)
+        .set(updatedTask)
+        .where(and(
+          eq(tasks.id, taskId),
+          eq(tasks.tenantId, tenantId)
+        ))
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error updating task:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Delete a task
    */
   async deleteTask(taskId: string, tenantId: string) {
-    // Verify task exists and belongs to tenant
-    await this.getTaskById(taskId, tenantId);
-    
-    // Delete task assignees first (cascade not handled by ORM)
-    await db.delete(taskAssignees)
-      .where(eq(taskAssignees.taskId, taskId));
-    
-    // Delete task
-    await db.delete(tasks)
-      .where(and(
-        eq(tasks.id, taskId),
-        eq(tasks.tenantId, tenantId)
-      ));
+    try {
+      // First check if task exists and belongs to tenant
+      const existingTask = await this.getTaskById(taskId, tenantId);
+      
+      if (!existingTask) {
+        throw new Error('Task not found');
+      }
+      
+      // Delete all dependencies first
+      await db.delete(taskDependencies)
+        .where(or(
+          eq(taskDependencies.taskId, taskId),
+          eq(taskDependencies.dependsOnTaskId, taskId)
+        ));
+      
+      // Delete all time entries
+      await db.delete(timeEntries)
+        .where(eq(timeEntries.taskId, taskId));
+      
+      // Delete all attachments
+      await db.delete(taskAttachments)
+        .where(eq(taskAttachments.taskId, taskId));
+      
+      // Delete the task
+      const result = await db.delete(tasks)
+        .where(and(
+          eq(tasks.id, taskId),
+          eq(tasks.tenantId, tenantId)
+        ))
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      throw error;
+    }
   }
   
   /**
-   * Get tasks by project
-   * @param projectId Project ID
-   * @param tenantId Tenant ID
-   * @param filters Optional filters
-   * @param page Page number
-   * @param limit Items per page
-   * @returns Tasks and total count
+   * Add a dependency between tasks
    */
-  async getTasksByProject(
-    projectId: string, 
-    tenantId: string, 
-    filters: z.infer<typeof taskFilterSchema> = {}, 
-    page: number = 1, 
-    limit: number = 20
-  ) {
-    const offset = (page - 1) * limit;
-    
-    // Build where conditions
-    let whereConditions = and(
-      eq(tasks.projectId, projectId),
-      eq(tasks.tenantId, tenantId)
-    );
-    
-    // Apply filters
-    if (filters.status) {
-      whereConditions = and(whereConditions, eq(tasks.status, filters.status));
-    }
-    
-    if (filters.priority) {
-      whereConditions = and(whereConditions, eq(tasks.priority, filters.priority));
-    }
-    
-    // Get tasks
-    const tasksResult = await db.query.tasks.findMany({
-      where: whereConditions,
-      limit,
-      offset,
-      orderBy: filters.sortBy && filters.sortOrder 
-        ? filters.sortOrder === 'desc' 
-          ? desc(tasks[filters.sortBy as keyof typeof tasks]) 
-          : asc(tasks[filters.sortBy as keyof typeof tasks])
-        : desc(tasks.createdAt),
-    });
-    
-    // Get total count
-    const totalCount = await db.select({ count: tasks.id })
-      .from(tasks)
-      .where(whereConditions)
-      .then(result => result.length);
-    
-    // Get assignees for each task
-    const tasksWithAssignees = await Promise.all(
-      tasksResult.map(async (task) => {
-        const assignees = await db
-          .select({
-            id: taskAssignees.id,
-            userId: taskAssignees.userId,
-            user: {
-              id: users.id,
-              email: users.email,
-              firstName: users.firstName,
-              lastName: users.lastName,
-              avatarUrl: users.avatarUrl,
-            },
-          })
-          .from(taskAssignees)
-          .innerJoin(users, eq(taskAssignees.userId, users.id))
-          .where(eq(taskAssignees.taskId, task.id));
-        
-        return { ...task, assignees };
-      })
-    );
-    
-    // Filter by assignee if specified
-    const filteredTasks = filters.assigneeId 
-      ? tasksWithAssignees.filter(task => 
-          task.assignees.some(assignee => assignee.userId === filters.assigneeId)
-        )
-      : tasksWithAssignees;
-    
-    return {
-      tasks: filteredTasks,
-      total: totalCount,
-    };
-  }
-  
-  /**
-   * Get tasks by user
-   * @param userId User ID
-   * @param tenantId Tenant ID
-   * @param filters Optional filters
-   * @param page Page number
-   * @param limit Items per page
-   * @returns Tasks and total count
-   */
-  async getTasksByUser(
-    userId: string, 
-    tenantId: string, 
-    filters: z.infer<typeof taskFilterSchema> = {}, 
-    page: number = 1, 
-    limit: number = 20
-  ) {
-    const offset = (page - 1) * limit;
-    
-    // Get task IDs assigned to user
-    const userTaskIds = await db
-      .select({ taskId: taskAssignees.taskId })
-      .from(taskAssignees)
-      .where(eq(taskAssignees.userId, userId));
-    
-    if (userTaskIds.length === 0) {
-      return {
-        tasks: [],
-        total: 0,
+  async addTaskDependency(taskId: string, dependsOnTaskId: string, tenantId: string) {
+    try {
+      // Check if both tasks exist and belong to tenant
+      const task = await this.getTaskById(taskId, tenantId);
+      const dependsOnTask = await this.getTaskById(dependsOnTaskId, tenantId);
+      
+      if (!task || !dependsOnTask) {
+        throw new Error('One or both tasks not found');
+      }
+      
+      // Check if dependency already exists
+      const existingDependency = await db.select().from(taskDependencies)
+        .where(and(
+          eq(taskDependencies.taskId, taskId),
+          eq(taskDependencies.dependsOnTaskId, dependsOnTaskId)
+        ))
+        .limit(1);
+      
+      if (existingDependency.length > 0) {
+        throw new Error('Dependency already exists');
+      }
+      
+      // Check for circular dependencies
+      if (await this.wouldCreateCircularDependency(taskId, dependsOnTaskId)) {
+        throw new Error('Cannot create circular dependency');
+      }
+      
+      // Create the dependency
+      const newDependency = {
+        id: uuidv4(),
+        taskId,
+        dependsOnTaskId,
+        createdAt: new Date()
       };
+      
+      const result = await db.insert(taskDependencies).values(newDependency).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error adding task dependency:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Remove a dependency between tasks
+   */
+  async removeTaskDependency(taskId: string, dependsOnTaskId: string, tenantId: string) {
+    try {
+      // Check if both tasks exist and belong to tenant
+      const task = await this.getTaskById(taskId, tenantId);
+      const dependsOnTask = await this.getTaskById(dependsOnTaskId, tenantId);
+      
+      if (!task || !dependsOnTask) {
+        throw new Error('One or both tasks not found');
+      }
+      
+      // Delete the dependency
+      const result = await db.delete(taskDependencies)
+        .where(and(
+          eq(taskDependencies.taskId, taskId),
+          eq(taskDependencies.dependsOnTaskId, dependsOnTaskId)
+        ))
+        .returning();
+      
+      if (result.length === 0) {
+        throw new Error('Dependency not found');
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error removing task dependency:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Check if adding a dependency would create a circular reference
+   */
+  async wouldCreateCircularDependency(taskId: string, dependsOnTaskId: string): Promise<boolean> {
+    // If they're the same, it's circular
+    if (taskId === dependsOnTaskId) {
+      return true;
     }
     
-    // Build where conditions
-    let whereConditions = and(
-      eq(tasks.tenantId, tenantId),
-      or(...userTaskIds.map(({ taskId }) => eq(tasks.id, taskId)))
-    );
+    // Get all tasks that depend on the dependsOnTaskId
+    const dependencies = await db.select().from(taskDependencies)
+      .where(eq(taskDependencies.taskId, dependsOnTaskId));
     
-    // Apply filters
-    if (filters.status) {
-      whereConditions = and(whereConditions, eq(tasks.status, filters.status));
+    // Recursively check each dependency
+    for (const dependency of dependencies) {
+      if (dependency.dependsOnTaskId === taskId) {
+        return true;
+      }
+      
+      if (await this.wouldCreateCircularDependency(taskId, dependency.dependsOnTaskId)) {
+        return true;
+      }
     }
     
-    if (filters.priority) {
-      whereConditions = and(whereConditions, eq(tasks.priority, filters.priority));
-    }
-    
-    if (filters.projectId) {
-      whereConditions = and(whereConditions, eq(tasks.projectId, filters.projectId));
-    }
-    
-    // Get tasks
-    const tasksResult = await db.query.tasks.findMany({
-      where: whereConditions,
-      limit,
-      offset,
-      orderBy: filters.sortBy && filters.sortOrder 
-        ? filters.sortOrder === 'desc' 
-          ? desc(tasks[filters.sortBy as keyof typeof tasks]) 
-          : asc(tasks[filters.sortBy as keyof typeof tasks])
-        : desc(tasks.createdAt),
-    });
-    
-    // Get total count
-    const totalCount = await db.select({ count: tasks.id })
-      .from(tasks)
-      .where(whereConditions)
-      .then(result => result.length);
-    
-    // Get assignees for each task
-    const tasksWithAssignees = await Promise.all(
-      tasksResult.map(async (task) => {
-        const assignees = await db
-          .select({
-            id: taskAssignees.id,
-            userId: taskAssignees.userId,
-            user: {
-              id: users.id,
-              email: users.email,
-              firstName: users.firstName,
-              lastName: users.lastName,
-              avatarUrl: users.avatarUrl,
-            },
-          })
-          .from(taskAssignees)
-          .innerJoin(users, eq(taskAssignees.userId, users.id))
-          .where(eq(taskAssignees.taskId, task.id));
-        
-        return { ...task, assignees };
+    return false;
+  }
+  
+  /**
+   * Get all dependencies for a task
+   */
+  async getTaskDependencies(taskId: string, tenantId: string) {
+    try {
+      // Check if task exists and belongs to tenant
+      const task = await this.getTaskById(taskId, tenantId);
+      
+      if (!task) {
+        throw new Error('Task not found');
+      }
+      
+      // Get all dependencies
+      const dependencies = await db.select({
+        id: taskDependencies.id,
+        taskId: taskDependencies.taskId,
+        dependsOnTaskId: taskDependencies.dependsOnTaskId,
+        createdAt: taskDependencies.createdAt
       })
-    );
-    
-    return {
-      tasks: tasksWithAssignees,
-      total: totalCount,
-    };
-  }
-  
-  /**
-   * Assign task to user
-   * @param taskId Task ID
-   * @param userId User ID
-   * @param assignedBy User ID of assigner
-   * @param tenantId Tenant ID
-   * @returns Task assignee
-   */
-  async assignTask(taskId: string, userId: string, assignedBy: string, tenantId: string) {
-    // Verify task exists and belongs to tenant
-    await this.getTaskById(taskId, tenantId);
-    
-    // Verify user exists
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-    });
-    
-    if (!user) {
-      throw new Error('User not found');
+      .from(taskDependencies)
+      .where(eq(taskDependencies.taskId, taskId));
+      
+      return dependencies;
+    } catch (error) {
+      console.error('Error getting task dependencies:', error);
+      throw error;
     }
-    
-    // Check if user is already assigned
-    const existingAssignment = await db.query.taskAssignees.findFirst({
-      where: and(
-        eq(taskAssignees.taskId, taskId),
-        eq(taskAssignees.userId, userId)
-      ),
-    });
-    
-    if (existingAssignment) {
-      throw new Error('User is already assigned to this task');
-    }
-    
-    // Assign task to user
-    const [assignment] = await db.insert(taskAssignees).values({
-      id: uuidv4(),
-      taskId,
-      userId,
-      assignedBy,
-      createdAt: new Date(),
-    }).returning();
-    
-    return assignment;
-  }
-  
-  /**
-   * Unassign task from user
-   * @param taskId Task ID
-   * @param userId User ID
-   * @param tenantId Tenant ID
-   */
-  async unassignTask(taskId: string, userId: string, tenantId: string) {
-    // Verify task exists and belongs to tenant
-    await this.getTaskById(taskId, tenantId);
-    
-    // Unassign task from user
-    const result = await db.delete(taskAssignees)
-      .where(and(
-        eq(taskAssignees.taskId, taskId),
-        eq(taskAssignees.userId, userId)
-      ));
-    
-    if (result.rowCount === 0) {
-      throw new Error('User is not assigned to this task');
-    }
-  }
-  
-  /**
-   * Update task status
-   * @param taskId Task ID
-   * @param status New status
-   * @param tenantId Tenant ID
-   * @returns Updated task
-   */
-  async updateTaskStatus(taskId: string, status: TaskStatus, tenantId: string) {
-    return this.updateTask(taskId, { status }, tenantId);
   }
 }
-
-// Export singleton instance
-export const taskService = new TaskService();

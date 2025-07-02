@@ -1,0 +1,78 @@
+groups:
+- name: renexus_alerts
+  rules:
+  # API Alerts
+  - alert: APIHighResponseTime
+    expr: avg(http_request_duration_ms{job="renexus_api"}) > 200
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High API Response Time"
+      description: "API response time is above 200ms for the last 5 minutes"
+
+  - alert: APIHighErrorRate
+    expr: sum(rate(http_request_errors_total{job="renexus_api"}[5m])) / sum(rate(http_requests_total{job="renexus_api"}[5m])) > 0.05
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "High API Error Rate"
+      description: "API error rate is above 5% for the last minute"
+
+  # Database Alerts
+  - alert: DatabaseHighConnections
+    expr: sum(pg_stat_activity_count{datname="renexus_prod"}) > 100
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Database Connections"
+      description: "More than 100 active connections to the database for the last 5 minutes"
+
+  - alert: DatabaseSlowQueries
+    expr: sum(pg_stat_activity_max_tx_duration{datname="renexus_prod"}) > 30
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Slow Database Queries"
+      description: "Database queries taking more than 30 seconds"
+
+  # Redis Alerts
+  - alert: RedisMemoryHigh
+    expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.8
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Redis Memory High"
+      description: "Redis is using more than 80% of available memory"
+
+  # System Alerts
+  - alert: HighCPULoad
+    expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU Load"
+      description: "CPU load is above 80% for the last 5 minutes"
+
+  - alert: HighMemoryUsage
+    expr: (node_memory_MemTotal_bytes - node_memory_MemFree_bytes - node_memory_Buffers_bytes - node_memory_Cached_bytes) / node_memory_MemTotal_bytes > 0.8
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Memory Usage"
+      description: "Memory usage is above 80% for the last 5 minutes"
+
+  - alert: HighDiskUsage
+    expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes > 0.85
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Disk Usage"
+      description: "Disk usage is above 85% for the last 5 minutes"

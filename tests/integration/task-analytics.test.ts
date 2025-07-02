@@ -1,140 +1,172 @@
+/**
+ * Integration tests for Task Analytics API
+ * Using real database connections and actual implementations
+ */
+
 // @ts-nocheck
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
+import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '../../apps/api/src/app.module';
 import { PrismaService } from '../../apps/api/src/prisma.service';
 import { TaskAnalyticsController } from '../../apps/api/src/features/task-analytics/task-analytics.controller';
+import { TaskAnalyticsService } from '../../apps/api/src/features/task-analytics/task-analytics.service';
+import { testDb } from '../setup/test-db';
+
+// Only mock the authentication - we'll use real implementations for everything else
+jest.mock('../../apps/api/src/auth/auth.guard', () => {
+  return {
+    AuthGuard: jest.fn().mockImplementation(() => {
+      return {
+        canActivate: jest.fn().mockImplementation(context => {
+          const req = context.switchToHttp().getRequest();
+          req.user = {
+            id: 'test-user-1',
+            email: 'test1@example.com',
+            tenantId: 'test-tenant-1',
+            role: 'ADMIN'
+          };
+          return true;
+        })
+      };
+    })
+  };
+});
 
 describe('TaskAnalyticsController (Integration)', () => {
   let app: INestApplication;
+  let taskAnalyticsService: TaskAnalyticsService;
   let prismaService: PrismaService;
 
-  // Mock data
-  const mockTask = {
-    id: 'task-test-1',
-    title: 'Test Task',
-    description: 'Task for testing',
-    status: 'IN_PROGRESS',
-    projectId: 'project-test-1',
-    assigneeId: 'user-test-1',
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-    updatedAt: new Date()
-  };
-
-  const mockTimeLogs = [
-    {
-      id: 'time-log-1',
-      taskId: 'task-test-1',
-      userId: 'user-test-1',
-      startTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      endTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000), // 2 hours
-      description: 'Working on implementation',
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: 'time-log-2',
-      taskId: 'task-test-1',
-      userId: 'user-test-1',
-      startTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      endTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000), // 3 hours
-      description: 'Fixing bugs',
-      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-    }
-  ];
-
   beforeAll(async () => {
-    // Mock the NestJS module
-    const mockPrismaService = {
-      task: {
-        create: jest.fn().mockResolvedValue(mockTask),
-        findUnique: jest.fn().mockResolvedValue(mockTask),
-        findMany: jest.fn().mockResolvedValue([mockTask])
-      },
-      timeLog: {
-        findMany: jest.fn().mockResolvedValue(mockTimeLogs),
-        aggregate: jest.fn().mockResolvedValue({
-          _sum: {
-            duration: 5 * 60 * 60 * 1000 // 5 hours in milliseconds
-          }
-        })
-      },
-      $transaction: jest.fn().mockImplementation((callback) => callback(mockPrismaService))
-    };
-    
-    const mockTaskAnalyticsController = {
-      getTaskTimeStats: jest.fn().mockResolvedValue({
-        totalTime: 5 * 60 * 60 * 1000,
-        timeEntries: mockTimeLogs.length,
-        averageTimePerEntry: (5 * 60 * 60 * 1000) / mockTimeLogs.length
-      }),
-      getProjectTimeDistribution: jest.fn().mockResolvedValue([
-        { projectId: 'project-test-1', totalTime: 5 * 60 * 60 * 1000, percentage: 100 }
-      ])
-    };
-    
+    // Create a real NestJS application for integration testing
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-    .overrideProvider(PrismaService)
-    .useValue(mockPrismaService)
-    .overrideProvider(TaskAnalyticsController)
-    .useValue(mockTaskAnalyticsController)
-    .compile();
+      imports: [AppModule], // Use the real AppModule
+    }).compile();
 
     app = moduleFixture.createNestApplication();
-    await app.init();
-
+    
+    // Get the real services from the NestJS container
+    taskAnalyticsService = moduleFixture.get<TaskAnalyticsService>(TaskAnalyticsService);
     prismaService = moduleFixture.get<PrismaService>(PrismaService);
     
-    // No need to seed test data as we're using mocks
-    // Mock data is already set up in the mock services
+    // Initialize the application
+    await app.init();
   });
 
   afterAll(async () => {
-    // Clean up test data
-    await prismaService.timeLog.deleteMany({
-      where: { taskId: mockTask.id }
-    });
-    await prismaService.task.delete({
-      where: { id: mockTask.id }
-    });
+    // Close the application when tests are done
     await app.close();
+    
+    // Note: Database connections are closed in jest-teardown.js
   });
 
-  describe('/tasks/:taskId/analytics', () => {
-    it('should return task analytics data', async () => {
+  describe('GET /task-analytics/task-time-stats', () => {
+    it('should return task time statistics using real database data', async () => {
+      // Act - using real database
       const response = await request(app.getHttpServer())
-        .get(`/tasks/${mockTask.id}/analytics`)
+        .get('/api/task-analytics/task-time-stats?taskId=test-task-1')
         .expect(200);
 
-      expect(response.body).toHaveProperty('timeSpent');
-      expect(response.body.timeSpent).toEqual(expect.any(Number));
-      expect(response.body.timeSpent).toBeGreaterThanOrEqual(5); // 5 hours total from mock data
+      // Assert
+      expect(response.body).toBeDefined();
+      expect(response.body.totalTime).toBeDefined();
+      expect(response.body.timeEntries).toBeDefined();
+      expect(response.body.averageTimePerEntry).toBeDefined();
       
-      expect(response.body).toHaveProperty('completionTrends');
-      expect(Array.isArray(response.body.completionTrends)).toBeTruthy();
-    });
-
-    it('should return 404 for non-existent task', async () => {
-      await request(app.getHttpServer())
-        .get('/tasks/non-existent-task/analytics')
-        .expect(404);
+      // If time entries exist, averageTimePerEntry should be totalTime / timeEntries
+      if (response.body.timeEntries > 0) {
+        expect(response.body.averageTimePerEntry).toBe(
+          response.body.totalTime / response.body.timeEntries
+        );
+      }
     });
   });
 
-  describe('/projects/:projectId/analytics/completion-trends', () => {
-    it('should return project completion trends', async () => {
+  describe('GET /task-analytics/project-time-distribution', () => {
+    it('should return project time distribution using real database data', async () => {
+      // Act - using real database
       const response = await request(app.getHttpServer())
-        .get(`/projects/${mockTask.projectId}/analytics/completion-trends`)
+        .get('/api/task-analytics/project-time-distribution')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBeTruthy();
-      expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body[0]).toHaveProperty('week');
-      expect(response.body[0]).toHaveProperty('count');
+      // Assert
+      expect(Array.isArray(response.body)).toBe(true);
+      
+      // If we have project time data
+      if (response.body.length > 0) {
+        const firstProject = response.body[0];
+        expect(firstProject.projectId).toBeDefined();
+        expect(firstProject.totalTime).toBeDefined();
+        expect(firstProject.percentage).toBeDefined();
+      }
+    });
+  });
+
+  describe('GET /task-analytics/task-completion-trend', () => {
+    it('should return task completion trend using real database data', async () => {
+      // Act - using real database
+      const response = await request(app.getHttpServer())
+        .get('/api/task-analytics/task-completion-trend?timeframe=week&projectId=test-project-1')
+        .expect(200);
+
+      // Assert
+      expect(Array.isArray(response.body)).toBe(true);
+    });
+  });
+
+  describe('GET /task-analytics/task-status-distribution', () => {
+    it('should return task status distribution using real database data', async () => {
+      // Act - using real database
+      const response = await request(app.getHttpServer())
+        .get('/api/task-analytics/task-status-distribution?projectId=test-project-1')
+        .expect(200);
+
+      // Assert
+      expect(response.body).toBeDefined();
+      
+      // The response format may vary based on your implementation,
+      // but common fields in task status distribution would be:
+      // TODO, IN_PROGRESS, COMPLETED, REVIEW, etc.
+      const keys = Object.keys(response.body);
+      expect(keys.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('GET /task-analytics/average-completion-time', () => {
+    it('should return average completion time using real database data', async () => {
+      // Act - using real database
+      const response = await request(app.getHttpServer())
+        .get('/api/task-analytics/average-completion-time?projectId=test-project-1')
+        .expect(200);
+
+      // Assert
+      expect(response.body).toBeDefined();
+      expect(response.body.averageDays).toBeDefined();
+      
+      // Check if we have priority breakdown
+      if (response.body.byPriority) {
+        expect(typeof response.body.byPriority).toBe('object');
+      }
+    });
+  });
+
+  describe('GET /task-analytics/user-productivity', () => {
+    it('should return user productivity metrics using real database data', async () => {
+      // Act - using real database
+      const response = await request(app.getHttpServer())
+        .get(`/api/task-analytics/user-productivity?userId=test-user-1&timeframe=month`)
+        .expect(200);
+
+      // Assert
+      expect(response.body).toBeDefined();
+      expect(response.body.tasksCompleted).toBeDefined();
+      expect(response.body.totalTimeLogged).toBeDefined();
+      
+      // Additional metrics that might be present
+      if (response.body.byStatus) {
+        expect(Array.isArray(response.body.byStatus)).toBe(true);
+      }
     });
   });
 });

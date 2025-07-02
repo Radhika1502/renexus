@@ -1,0 +1,14 @@
+{
+  "name": "renexus-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tools for Renexus project",
+  "main": "index.js",
+  "scripts": {
+    "restructure": "node restructure.js"
+  },
+  "dependencies": {
+    "fs-extra": "^10.1.0",
+    "glob": "^8.1.0"
+  }
+}

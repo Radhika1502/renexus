@@ -1,0 +1,264 @@
+=== Task Management Module Test Results ===
+Started at: 2025-07-02T18:08:27.139Z
+
+Found 18 test files.
+
+Running test: src\features\task-management\components\__tests__\BasicTest.test.tsx
+❌ FAILED: src\features\task-management\components\__tests__\BasicTest.test.tsx
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\components\__tests__\BasicTest.test.tsx - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\components\__tests__\SimpleTest.test.js
+❌ FAILED: src\features\task-management\components\__tests__\SimpleTest.test.js
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\components\__tests__\SimpleTest.test.js - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\components\__tests__\TaskActivity.test.tsx
+❌ FAILED: src\features\task-management\components\__tests__\TaskActivity.test.tsx
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\components\__tests__\TaskActivity.test.tsx - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\components\__tests__\TaskAttachments.test.tsx
+❌ FAILED: src\features\task-management\components\__tests__\TaskAttachments.test.tsx
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\components\__tests__\TaskAttachments.test.tsx - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\components\__tests__\TaskBoard.test.tsx
+❌ FAILED: src\features\task-management\components\__tests__\TaskBoard.test.tsx
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\components\__tests__\TaskBoard.test.tsx - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\components\__tests__\TaskCard.test.tsx
+❌ FAILED: src\features\task-management\components\__tests__\TaskCard.test.tsx
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\components\__tests__\TaskCard.test.tsx - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\components\__tests__\TaskCardSimple.test.tsx
+❌ FAILED: src\features\task-management\components\__tests__\TaskCardSimple.test.tsx
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\components\__tests__\TaskCardSimple.test.tsx - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\components\__tests__\TaskDependencies.test.tsx
+❌ FAILED: src\features\task-management\components\__tests__\TaskDependencies.test.tsx
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\components\__tests__\TaskDependencies.test.tsx - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\components\__tests__\TaskDetails.test.tsx
+❌ FAILED: src\features\task-management\components\__tests__\TaskDetails.test.tsx
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\components\__tests__\TaskDetails.test.tsx - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\components\__tests__\TaskNotifications.test.tsx
+❌ FAILED: src\features\task-management\components\__tests__\TaskNotifications.test.tsx
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\components\__tests__\TaskNotifications.test.tsx - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\components\__tests__\TaskPresence.test.tsx
+❌ FAILED: src\features\task-management\components\__tests__\TaskPresence.test.tsx
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\components\__tests__\TaskPresence.test.tsx - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\components\__tests__\TaskTemplateForm.test.tsx
+❌ FAILED: src\features\task-management\components\__tests__\TaskTemplateForm.test.tsx
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\components\__tests__\TaskTemplateForm.test.tsx - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\components\__tests__\TaskTemplates.test.tsx
+❌ FAILED: src\features\task-management\components\__tests__\TaskTemplates.test.tsx
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\components\__tests__\TaskTemplates.test.tsx - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\components\__tests__\TaskTimeTracking.test.tsx
+❌ FAILED: src\features\task-management\components\__tests__\TaskTimeTracking.test.tsx
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\components\__tests__\TaskTimeTracking.test.tsx - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\hooks\__tests__\useTaskRealtime.test.ts
+❌ FAILED: src\features\task-management\hooks\__tests__\useTaskRealtime.test.ts
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\hooks\__tests__\useTaskRealtime.test.ts - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\hooks\__tests__\useTaskTemplates.test.ts
+❌ FAILED: src\features\task-management\hooks\__tests__\useTaskTemplates.test.ts
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\hooks\__tests__\useTaskTemplates.test.ts - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\tests\offlineSync.test.tsx
+❌ FAILED: src\features\task-management\tests\offlineSync.test.tsx
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\tests\offlineSync.test.tsx - 0 matches
+
+No stderr
+
+Running test: src\features\task-management\tests\simple.test.js
+❌ FAILED: src\features\task-management\tests\simple.test.js
+Error output:
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\HP\Renexus\apps\frontend\web
+  368 files checked.
+  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 21 matches
+  testPathIgnorePatterns: \\node_modules\\ - 368 matches
+  testRegex:  - 0 matches
+Pattern: src\features\task-management\tests\simple.test.js - 0 matches
+
+No stderr
+
+=== Summary ===
+Total tests: 18
+Passed: 0
+Failed: 18
+Success rate: 0.00%
+
+Finished at: 2025-07-02T18:09:54.553Z

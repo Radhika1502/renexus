@@ -1,0 +1,371 @@
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in C:/Users/HP/Renexus/apps/frontend/web/tsconfig.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in C:/Users/HP/Renexus/apps/frontend/web/tsconfig.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in C:/Users/HP/Renexus/apps/frontend/web/tsconfig.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in C:/Users/HP/Renexus/apps/frontend/web/tsconfig.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in C:/Users/HP/Renexus/apps/frontend/web/tsconfig.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in C:/Users/HP/Renexus/apps/frontend/web/tsconfig.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in C:/Users/HP/Renexus/apps/frontend/web/tsconfig.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+FAIL src/features/task-management/components/__tests__/TaskTimeTracking.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+FAIL src/features/task-management/components/__tests__/TaskNotifications.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+FAIL src/features/task-management/hooks/__tests__/useTaskRealtime.test.ts
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+FAIL src/features/task-management/components/__tests__/TaskTemplates.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+FAIL src/features/task-management/hooks/__tests__/useTaskTemplates.test.ts
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+FAIL src/features/task-management/components/__tests__/TaskPresence.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+FAIL src/features/task-management/components/__tests__/TaskTemplateForm.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+FAIL src/features/task-management/components/__tests__/TaskDetails.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+FAIL src/features/task-management/components/__tests__/TaskDependencies.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+FAIL src/features/task-management/components/__tests__/TaskActivity.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+FAIL src/features/task-management/components/__tests__/TaskBoard.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+FAIL src/features/task-management/components/__tests__/TaskCard.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+FAIL src/features/task-management/components/__tests__/TaskAttachments.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+FAIL src/features/task-management/components/__tests__/BasicTest.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+FAIL src/features/task-management/tests/offlineSync.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module '@adobe/css-tools' from 'node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js'
+
+    Require stack:
+      node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js
+      node_modules/@testing-library/jest-dom/dist/index.js
+      src/setupTests.ts
+
+    [0m [90m 3 |[39m [90m// expect(element).toHaveTextContent(/react/i)[39m
+     [90m 4 |[39m [90m// learn more: https://github.com/testing-library/jest-dom[39m
+    [31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m [32m'@testing-library/jest-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 6 |[39m
+     [90m 7 |[39m [90m// Mock the fetch API[39m
+     [90m 8 |[39m global[33m.[39mfetch [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
+
+      at Resolver._throwModNotFoundError (../../../node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/matchers-7fb38cd4.js:4:16)
+      at Object.<anonymous> (node_modules/@testing-library/jest-dom/dist/index.js:3:16)
+      at Object.<anonymous> (src/setupTests.ts:5:1)
+
+Test Suites: 15 failed, 15 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        7.611 s
+Ran all test suites matching /features\\task-management/i.

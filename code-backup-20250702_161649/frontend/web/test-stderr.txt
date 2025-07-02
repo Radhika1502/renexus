@@ -1,0 +1,9 @@
+PASS src/features/task-management/components/__tests__/BasicTest.test.tsx
+  Basic Test
+    √ should pass (3 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       1 passed, 1 total
+Snapshots:   0 total
+Time:        3.766 s
+Ran all test suites matching /src\\features\\task-management\\components\\__tests__\\BasicTest.test.tsx/i.

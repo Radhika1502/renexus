@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { logger } from '../utils/logger';
+import { logger } from "../../shared/utils/logger";
 
 const router = Router();
 
@@ -29,3 +29,4 @@ const authServiceProxy = createProxyMiddleware({
 router.use('/', authServiceProxy);
 
 export default router;
+

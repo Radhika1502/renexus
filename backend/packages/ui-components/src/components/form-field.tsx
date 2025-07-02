@@ -54,8 +54,8 @@ export const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(({
               name,
               "aria-invalid": !!error,
               "aria-describedby": error ? `${name}-error` : undefined,
-              ...register(name),
               ...children.props,
+              ...register(name, children.props),
             })
           : children}
       </div>

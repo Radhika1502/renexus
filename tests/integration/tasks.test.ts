@@ -1,9 +1,12 @@
 // @ts-nocheck
 import request from 'supertest';
 import express, { Application } from 'express';
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { jest, describe, it, expect, beforeEach, afterEach, beforeAll } from '@jest/globals';
 import taskRoutes from '../../services/tasks/task.routes';
 import { TaskService } from '../../services/tasks/task.service';
+// Import coverage helpers and db mocks
+const { createTaskServiceMock } = require('./test-coverage-helpers');
+const { dbMock, schemaMock } = require('../db-mock');
 
 // Mock authentication middleware
 jest.mock('../../services/auth/auth.middleware', () => ({
@@ -24,8 +27,87 @@ jest.mock('../../services/auth/auth.middleware', () => ({
   },
 }));
 
-// Mock TaskService
-jest.mock('../../services/tasks/task.service');
+// Mock the db module first to prevent the actual import error
+jest.mock('../../db', () => ({
+  db: dbMock
+}));
+
+// Mock the schema imports
+jest.mock('../../db/schema', () => schemaMock);
+
+// Mock TaskService completely
+jest.mock('../../services/tasks/task.service', () => {
+  return {
+    TaskService: jest.fn().mockImplementation(() => {
+      return {
+        getTasksByTenant: jest.fn().mockResolvedValue({
+          data: [
+            {
+              id: 'task-1',
+              title: 'Task 1',
+              description: 'Description 1',
+              status: 'TODO',
+              priority: 'MEDIUM',
+              projectId: 'project-1',
+            },
+            {
+              id: 'task-2',
+              title: 'Task 2',
+              description: 'Description 2',
+              status: 'IN_PROGRESS',
+              priority: 'HIGH',
+              projectId: 'project-1',
+            },
+          ],
+          pagination: {
+            total: 2,
+            page: 1,
+            limit: 10,
+          },
+        }),
+        getTasksByProject: jest.fn().mockResolvedValue({
+          data: [
+            { id: 'task-1', title: 'Task 1', status: 'TODO', projectId: 'project-1' },
+            { id: 'task-2', title: 'Task 2', status: 'IN_PROGRESS', projectId: 'project-1' }
+          ],
+          pagination: { total: 2, page: 1, limit: 10 }
+        }),
+        createTask: jest.fn().mockResolvedValue({
+          id: 'new-task-id',
+          title: 'New Task',
+          description: 'Task description',
+          status: 'TODO',
+          projectId: 'project-1',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }),
+        getTaskById: jest.fn().mockResolvedValue({
+          id: 'task-1',
+          title: 'Task 1',
+          description: 'Task description',
+          status: 'TODO',
+          projectId: 'project-1'
+        }),
+        updateTask: jest.fn().mockResolvedValue({
+          id: 'task-1',
+          title: 'Updated Task',
+          description: 'Updated description',
+          status: 'IN_PROGRESS',
+          projectId: 'project-1',
+          updatedAt: new Date().toISOString()
+        }),
+        deleteTask: jest.fn().mockResolvedValue({ success: true }),
+        getTasksByUser: jest.fn(),
+        searchTasks: jest.fn(),
+        assignTask: jest.fn(),
+        getTaskAssignees: jest.fn(),
+        removeTaskAssignee: jest.fn(),
+      };
+    })
+  };
+});
+
+// No need for beforeAll setup since TaskService is now completely mocked
 
 describe('Task API Integration Tests', () => {
   let app: Application;

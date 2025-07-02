@@ -1,0 +1,15 @@
+ts-jest[ts-jest-transformer] (WARN) Define `ts-jest` config under `globals` is deprecated. Please do
+transform: {
+    <transform_regex>: ['ts-jest', { /* ts-jest config goes here in Jest */ }],
+},
+See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/presets#advanced
+PASS src/features/task-management/components/__tests__/SimpleTest.test.js
+  Simple Math Test
+    √ should add two numbers correctly (5 ms)
+    √ should multiply two numbers correctly (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        6.241 s
+Ran all test suites matching /src\\features\\task-management\\components\\__tests__\\SimpleTest.test.js/i.

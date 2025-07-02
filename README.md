@@ -2,6 +2,35 @@
 
 Renexus is a unified project and task management platform that combines the UI components from Renexus_Replit with the feature sets from project-bolt. The platform features AI-powered workflow automation, task analytics, and team performance metrics to optimize project management.
 
+## Monorepo Structure
+
+The project has been restructured as a monorepo to improve code organization and maintainability. The new structure is as follows:
+
+```
+renexus/
+├── apps/                  # Application code
+│   ├── backend/           # Backend services
+│   │   ├── api/           # Main API service
+│   │   ├── auth/          # Authentication service
+│   │   ├── notifications/ # Notification service
+│   │   └── tasks/         # Task management service
+│   └── frontend/          # Frontend applications
+│       └── web/           # Web application
+├── packages/              # Shared packages
+│   ├── database/          # Database models and migrations
+│   ├── shared/            # Shared utilities and types
+│   │   ├── api-client/    # API client for frontend
+│   │   ├── config/        # Shared configuration
+│   │   ├── types/         # Shared TypeScript types
+│   │   └── utils/         # Shared utility functions
+│   └── ui/                # Shared UI components
+├── tools/                 # Development and build tools
+├── docs/                  # Documentation
+└── .github/               # GitHub workflows and templates
+```
+
+This structure helps consolidate duplicate directories and establishes a clear separation between backend microservices, frontend code, and shared packages.
+
 ## Backend Implementation Status
 
 **Phase 1: 85% Complete**
@@ -18,6 +47,8 @@ Renexus is a unified project and task management platform that combines the UI c
 - Comprehensive test suite for services and API endpoints
 
 ⏳ **In Progress**:
+- Offline synchronization support for task management
+- Directory restructuring for monorepo architecture
 - Fixing remaining TypeScript type definition issues
 - Integration with frontend components
 - End-to-end testing

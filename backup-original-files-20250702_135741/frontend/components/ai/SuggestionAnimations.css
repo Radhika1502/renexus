@@ -1,0 +1,213 @@
+/* Animation and transition effects for AI suggestion components */
+
+/* Notification entrance animation */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Notification exit animation */
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Panel entrance animation */
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Panel exit animation */
+@keyframes slideOutDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+/* Card entrance animation */
+@keyframes fadeInScale {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Card exit animation */
+@keyframes fadeOutScale {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* Pulse animation for new suggestions */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(74, 134, 232, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(74, 134, 232, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(74, 134, 232, 0);
+  }
+}
+
+/* Apply animations to components */
+.suggestion-notification.entering {
+  animation: slideInRight 0.3s ease forwards;
+}
+
+.suggestion-notification.exiting {
+  animation: slideOutRight 0.3s ease forwards;
+}
+
+.suggestion-panel.entering {
+  animation: slideInUp 0.3s ease forwards;
+}
+
+.suggestion-panel.exiting {
+  animation: slideOutDown 0.3s ease forwards;
+}
+
+.suggestion-card.entering {
+  animation: fadeInScale 0.3s ease forwards;
+}
+
+.suggestion-card.exiting {
+  animation: fadeOutScale 0.3s ease forwards;
+}
+
+/* Staggered entrance for multiple cards */
+.suggestion-card:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.suggestion-card:nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.suggestion-card:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.suggestion-card:nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+.suggestion-card:nth-child(5) {
+  animation-delay: 0.2s;
+}
+
+/* Hover effects */
+.suggestion-card:hover {
+  transform: translateY(-2px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.suggestion-notification:hover {
+  transform: translateX(-2px);
+  transition: transform 0.2s ease;
+}
+
+/* Button effects */
+.action-button {
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.action-button:active {
+  transform: scale(0.95);
+}
+
+/* Highlight new suggestions */
+.suggestion-notification.new,
+.suggestion-card.new {
+  animation: pulse 2s infinite;
+}
+
+/* Transition for expanding/collapsing panels */
+.suggestion-panel-content {
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  overflow: hidden;
+}
+
+.suggestion-panel.collapsed .suggestion-panel-content {
+  max-height: 0;
+  opacity: 0;
+}
+
+.suggestion-panel.expanded .suggestion-panel-content {
+  max-height: 500px;
+  opacity: 1;
+}
+
+/* Transition for feedback form */
+.feedback-form {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.feedback-form.visible {
+  max-height: 200px;
+  opacity: 1;
+}
+
+/* Loading animation */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(74, 134, 232, 0.3);
+  border-radius: 50%;
+  border-top-color: #4a86e8;
+  animation: rotate 1s linear infinite;
+  display: inline-block;
+}
+
+/* Confidence bar animation */
+.confidence-fill {
+  transition: width 0.8s ease-in-out;
+}

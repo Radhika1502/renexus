@@ -1,0 +1,37 @@
+ts-jest[ts-jest-transformer] (WARN) Define `ts-jest` config under `globals` is deprecated. Please do
+transform: {
+    <transform_regex>: ['ts-jest', { /* ts-jest config goes here in Jest */ }],
+},
+See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/presets#advanced
+FAIL src/features/task-management/components/__tests__/TaskBoard.test.tsx
+  ● Test suite failed to run
+
+    Cannot find module 'class-variance-authority' from '../../../backend/packages/ui-components/dist/components/button.js'
+
+    Require stack:
+      C:/Users/HP/Renexus/backend/packages/ui-components/dist/components/button.js
+      C:/Users/HP/Renexus/backend/packages/ui-components/dist/index.js
+      src/features/task-management/components/TaskCard.tsx
+      src/features/task-management/components/TaskBoard.tsx
+      src/features/task-management/components/__tests__/TaskBoard.test.tsx
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m[33m;[39m
+     [90m 2 |[39m [36mimport[39m { [33mSlot[39m } [36mfrom[39m [32m"@radix-ui/react-slot"[39m[33m;[39m
+    [31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { cva[33m,[39m type [33mVariantProps[39m } [36mfrom[39m [32m"class-variance-authority"[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 4 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"../utils"[39m[33m;[39m
+     [90m 5 |[39m
+     [90m 6 |[39m [36mconst[39m buttonVariants [33m=[39m cva([0m
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (../../../backend/packages/ui-components/src/components/button.tsx:3:1)
+      at Object.require (../../../backend/packages/ui-components/src/index.tsx:2:1)
+      at Object.<anonymous> (src/features/task-management/components/TaskCard.tsx:3:1)
+      at Object.<anonymous> (src/features/task-management/components/TaskBoard.tsx:4:1)
+      at Object.<anonymous> (src/features/task-management/components/__tests__/TaskBoard.test.tsx:4:1)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        8.982 s
+Ran all test suites matching /src\\features\\task-management\\components\\__tests__\\TaskBoard.test.tsx/i.

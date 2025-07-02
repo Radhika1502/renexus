@@ -23,4 +23,11 @@ module.exports = {
     },
   },
   verbose: true,
+  // Added global setup and teardown for integration tests with real database
+  globalSetup: '<rootDir>/tests/jest-setup.js',
+  globalTeardown: '<rootDir>/tests/jest-teardown.js',
+  // Set longer timeout for database operations
+  testTimeout: 30000,
+  // Force tests to run in series for database stability
+  maxWorkers: 1,
 };
