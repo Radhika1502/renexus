@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Renexus
 
 Renexus is a unified project and task management platform that combines the UI components from Renexus_Replit with the feature sets from project-bolt. The platform features AI-powered workflow automation, task analytics, and team performance metrics to optimize project management.
@@ -156,3 +157,6 @@ Renexus follows a modular architecture with:
 ## License
 
 This project is private and proprietary.
+=======
+# renexus
+>>>>>>> 1830ddc90b2a6154db892630a9d8cd1bf36f2259
