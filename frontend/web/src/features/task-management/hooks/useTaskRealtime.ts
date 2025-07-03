@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { websocketService, WebSocketEventType, WebSocketMessage, UserPresence } from '../services/websocket';
 import { Task } from '../types';
-import { useAuth } from '../../auth/hooks/useAuth';
+import { useAuth } from '../../../hooks/useAuth';
 
 /**
  * Hook for real-time task updates and user presence

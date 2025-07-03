@@ -6,7 +6,7 @@ import { WorkflowAutomationModule } from './features/workflow-automation/workflo
 import { TasksModule } from './features/tasks/tasks.module';
 import { DashboardModule } from './features/dashboard/dashboard.module';
 import { HealthModule } from './health/health.module';
-import { AppCacheModule } from './cache/cache.module';
+import { CacheModule } from './cache/cache.module';
 import { SecurityMiddleware } from './security/security.middleware';
 import { PrismaService } from './prisma.service';
 import { DatabaseModule } from './database/database.module';
@@ -33,7 +33,7 @@ import { DatabaseModule } from './database/database.module';
     
     // Core modules
     HealthModule,
-    AppCacheModule
+    CacheModule
   ],
   providers: [],
   exports: []

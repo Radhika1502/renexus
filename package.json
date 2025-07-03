@@ -10,6 +10,8 @@
                     "clean":  "turbo run clean",
                     "build":  "turbo run build",
                     "dev":  "turbo run dev",
-                    "lint":  "turbo run lint"
+                    "lint":  "turbo run lint",
+                    "test:e2e": "cypress run",
+                    "coverage": "node scripts/coverage.js"
                 }
 }

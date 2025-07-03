@@ -5,6 +5,8 @@ import { TaskDependenciesService } from './task-dependencies.service';
 import { TaskAttachmentsService } from './task-attachments.service';
 import { TaskTimeTrackingService } from './task-time-tracking.service';
 import { TaskTemplatesService } from './task-templates.service';
+import { TaskOptimizationService } from './task-optimization.service';
+import { TaskOptimizationController } from './task-optimization.controller';
 import { PrismaService } from '../../prisma.service';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -35,19 +37,21 @@ import * as fs from 'fs';
       },
     }),
   ],
-  controllers: [TasksController],
+  controllers: [TasksController, TaskOptimizationController],
   providers: [
     TasksService,
     TaskDependenciesService,
     TaskAttachmentsService,
     TaskTimeTrackingService,
     TaskTemplatesService,
+    TaskOptimizationService,
     PrismaService,
   ],
   exports: [
     TasksService,
     TaskDependenciesService,
     TaskAttachmentsService,
+    TaskOptimizationService,
     TaskTimeTrackingService,
     TaskTemplatesService,
   ],

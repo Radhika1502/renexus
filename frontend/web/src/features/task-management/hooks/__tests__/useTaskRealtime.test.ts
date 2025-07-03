@@ -1,15 +1,15 @@
-import { renderHook, act } from '@testing-library/react-hooks';
+import { renderHook, act } from '@testing-library/react';
 import { useTaskRealtime } from '../useTaskRealtime';
 import { websocketService } from '../../services/websocket';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../../../auth/hooks/useAuth';
+import { useAuth } from '../../../../hooks/useAuth';
 
 // Mock dependencies
 jest.mock('@tanstack/react-query', () => ({
   useQueryClient: jest.fn(),
 }));
 
-jest.mock('../../../auth/hooks/useAuth', () => ({
+jest.mock('../../../../hooks/useAuth', () => ({
   useAuth: jest.fn(),
 }));
 
@@ -40,21 +40,25 @@ describe('useTaskRealtime', () => {
   });
 
   it('should connect to WebSocket on mount', async () => {
-    const { result, waitForNextUpdate } = renderHook(() => useTaskRealtime(mockTaskId));
+    const { result } = renderHook(() => useTaskRealtime(mockTaskId));
     
-    await waitForNextUpdate();
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
     
     expect(websocketService.connect).toHaveBeenCalledWith(mockUser.id, mockToken);
     expect(result.current.isConnected).toBe(true);
   });
 
   it('should update presence when taskId changes', async () => {
-    const { result, waitForNextUpdate, rerender } = renderHook(
-      (props) => useTaskRealtime(props.taskId),
+    const { result, rerender } = renderHook(
+      ({ taskId }: { taskId: string }) => useTaskRealtime(taskId),
       { initialProps: { taskId: mockTaskId } }
     );
     
-    await waitForNextUpdate();
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
     
     expect(websocketService.updatePresence).toHaveBeenCalledWith(mockTaskId, 'viewing');
     
@@ -65,9 +69,11 @@ describe('useTaskRealtime', () => {
   });
 
   it('should disconnect WebSocket on unmount', async () => {
-    const { waitForNextUpdate, unmount } = renderHook(() => useTaskRealtime(mockTaskId));
+    const { unmount } = renderHook(() => useTaskRealtime(mockTaskId));
     
-    await waitForNextUpdate();
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
     
     unmount();
     
@@ -77,7 +83,9 @@ describe('useTaskRealtime', () => {
   it('should subscribe to WebSocket events', async () => {
     renderHook(() => useTaskRealtime(mockTaskId));
     
-    await Promise.resolve();
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
     
     expect(websocketService.subscribe).toHaveBeenCalledWith('task_updated', expect.any(Function));
     expect(websocketService.subscribe).toHaveBeenCalledWith('task_created', expect.any(Function));
@@ -91,9 +99,11 @@ describe('useTaskRealtime', () => {
   });
 
   it('should update presence when updatePresence is called', async () => {
-    const { result, waitForNextUpdate } = renderHook(() => useTaskRealtime(mockTaskId));
+    const { result } = renderHook(() => useTaskRealtime(mockTaskId));
     
-    await waitForNextUpdate();
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
     
     act(() => {
       result.current.updatePresence('editing');
@@ -106,9 +116,11 @@ describe('useTaskRealtime', () => {
     const error = new Error('Connection failed');
     (websocketService.connect as jest.Mock).mockRejectedValueOnce(error);
     
-    const { result, waitForNextUpdate } = renderHook(() => useTaskRealtime(mockTaskId));
+    const { result } = renderHook(() => useTaskRealtime(mockTaskId));
     
-    await waitForNextUpdate();
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
     
     expect(result.current.isConnected).toBe(false);
     expect(result.current.error).toBe(error);

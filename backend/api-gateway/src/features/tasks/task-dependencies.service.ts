@@ -7,7 +7,7 @@ export class TaskDependenciesService {
 
   async findDependencies(taskId: string) {
     // Find all dependencies where this task depends on other tasks
-    const dependencies = await this.prisma.TaskDependency.findMany({
+    const dependencies = await this.prisma.taskDependency.findMany({
       where: { taskId },
       include: {
         dependsOnTask: true,
@@ -19,7 +19,7 @@ export class TaskDependenciesService {
 
   async findDependents(taskId: string) {
     // Find all tasks that depend on this task
-    const dependents = await this.prisma.TaskDependency.findMany({
+    const dependents = await this.prisma.taskDependency.findMany({
       where: { dependsOnTaskId: taskId },
       include: {
         task: true,
@@ -49,7 +49,7 @@ export class TaskDependenciesService {
   // Check if adding a dependency would create a circular dependency
   private async checkForCircularDependency(taskId: string, dependsOnTaskId: string): Promise<boolean> {
     // Check if dependsOnTask depends on task (direct circular dependency)
-    const directCircular = await this.prisma.TaskDependency.findFirst({
+    const directCircular = await this.prisma.taskDependency.findFirst({
       where: {
         taskId: dependsOnTaskId,
         dependsOnTaskId: taskId,
@@ -105,7 +105,7 @@ export class TaskDependenciesService {
     }
 
     // Check if the dependency already exists
-    const existingDependency = await this.prisma.TaskDependency.findFirst({
+    const existingDependency = await this.prisma.taskDependency.findFirst({
       where: {
         taskId,
         dependsOnTaskId,
@@ -123,7 +123,7 @@ export class TaskDependenciesService {
     }
 
     // Create the dependency
-    return this.prisma.TaskDependency.create({
+    return this.prisma.taskDependency.create({
       data: {
         taskId,
         dependsOnTaskId,
@@ -136,7 +136,7 @@ export class TaskDependenciesService {
 
   async removeDependency(dependencyId: string) {
     try {
-      return await this.prisma.TaskDependency.delete({
+      return await this.prisma.taskDependency.delete({
         where: { id: dependencyId },
       });
     } catch (error) {
@@ -153,7 +153,7 @@ export class TaskDependenciesService {
     // to avoid circular dependencies
 
     // First, find all tasks that this task already depends on
-    const existingDependencies = await this.prisma.TaskDependency.findMany({
+    const existingDependencies = await this.prisma.taskDependency.findMany({
       where: { taskId },
       select: { dependsOnTaskId: true },
     });
@@ -164,7 +164,7 @@ export class TaskDependenciesService {
     dependentTaskIds.add(taskId); // Add the task itself
     
     // Get direct dependents
-    const directDependents = await this.prisma.TaskDependency.findMany({
+    const directDependents = await this.prisma.taskDependency.findMany({
       where: { dependsOnTaskId: taskId },
       select: { taskId: true },
     });

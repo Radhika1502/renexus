@@ -72,6 +72,7 @@ describe('TaskTimeTracking Component', () => {
 
   beforeEach(() => {
     queryClient = new QueryClient();
+    jest.clearAllMocks(); // Clear all mocks before each test
   });
 
   it('renders time tracking information correctly', () => {
@@ -144,7 +145,7 @@ describe('TaskTimeTracking Component', () => {
 
   it('calls updateTask when time is logged manually', async () => {
     const mockUpdateTask = jest.fn().mockResolvedValue({});
-    require('../../hooks/useUpdateTask').useUpdateTask.mockImplementationOnce(() => ({
+    require('../../hooks/useUpdateTask').useUpdateTask.mockImplementation(() => ({
       updateTask: mockUpdateTask,
       isLoading: false,
     }));
@@ -214,12 +215,14 @@ describe('TaskTimeTracking Component', () => {
     );
     
     expect(screen.getByText('Stop Timer')).toBeInTheDocument();
-    expect(screen.getByText('01:00:00')).toBeInTheDocument(); // 1 hour elapsed
+    expect(screen.getByText((content, element) => {
+      return content.includes('01:00:00');
+    })).toBeInTheDocument(); // 1 hour elapsed
   });
 
   it('calls updateTask when timer is started', async () => {
     const mockUpdateTask = jest.fn().mockResolvedValue({});
-    require('../../hooks/useUpdateTask').useUpdateTask.mockImplementationOnce(() => ({
+    require('../../hooks/useUpdateTask').useUpdateTask.mockImplementation(() => ({
       updateTask: mockUpdateTask,
       isLoading: false,
     }));
@@ -250,7 +253,7 @@ describe('TaskTimeTracking Component', () => {
 
   it('calls updateTask when timer is stopped', async () => {
     const mockUpdateTask = jest.fn().mockResolvedValue({});
-    require('../../hooks/useUpdateTask').useUpdateTask.mockImplementationOnce(() => ({
+    require('../../hooks/useUpdateTask').useUpdateTask.mockImplementation(() => ({
       updateTask: mockUpdateTask,
       isLoading: false,
     }));

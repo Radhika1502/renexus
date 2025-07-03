@@ -1,6 +1,6 @@
 import React from 'react';
 import { Task, TaskPriority } from '../types';
-import { Badge, Tooltip, Checkbox } from '@renexus/ui-components';
+import { Badge, Tooltip, Checkbox } from './ui/Dialog';
 import { formatDate } from '../utils';
 import { AlertCircle, ArrowUp, ArrowDown, Clock, MessageSquare, Paperclip } from 'lucide-react';
 import { useTaskSelection } from '../context/TaskSelectionContext';

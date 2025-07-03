@@ -14,6 +14,18 @@ export class DashboardController {
     return this.dashboardService.getDashboardSummary();
   }
 
+  @Get('projects')
+  @ApiOperation({ summary: 'Get project summaries for dashboard' })
+  @ApiQuery({ name: 'start', required: false })
+  @ApiQuery({ name: 'end', required: false })
+  async getProjectSummaries(
+    @Query('start') start?: string,
+    @Query('end') end?: string,
+  ) {
+    const timeRange = start && end ? { start, end } : undefined;
+    return this.dashboardService.getProjectSummaries(timeRange);
+  }
+
   @Get('tasks/status')
   @ApiOperation({ summary: 'Get task status summary' })
   @ApiQuery({ name: 'projectId', required: false })
@@ -45,5 +57,15 @@ export class DashboardController {
   ) {
     const timeRange = start && end ? { start, end } : undefined;
     return this.dashboardService.getTimelineEvents(timeRange);
+  }
+
+  @Get('activity')
+  @ApiOperation({ summary: 'Get activity feed for dashboard' })
+  @ApiQuery({ name: 'limit', required: false })
+  async getActivityFeed(
+    @Query('limit') limit?: string,
+  ) {
+    const limitNumber = limit ? parseInt(limit, 10) : 10;
+    return this.dashboardService.getActivityFeed(limitNumber);
   }
 }

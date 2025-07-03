@@ -6,6 +6,8 @@ export interface TimeLogEntry {
   description: string;
   date: string;
   userId: string;
+  startTime?: string; // For timer tracking
+  endTime?: string;   // For timer tracking
 }
 
 /**

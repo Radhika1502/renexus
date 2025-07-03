@@ -111,6 +111,42 @@ export const taskAssignees = pgTable('task_assignees', {
   assignedAt: timestamp('assigned_at').defaultNow(),
 });
 
+// Task dependencies table
+export const taskDependencies = pgTable('task_dependencies', {
+  id: uuid('id').primaryKey(),
+  taskId: uuid('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  dependsOnTaskId: uuid('depends_on_task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// Workflow automation rules table
+export const workflowRules = pgTable('workflow_rules', {
+  id: uuid('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  projectId: uuid('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  isActive: boolean('is_active').notNull().default(true),
+  triggerType: varchar('trigger_type', { length: 100 }).notNull(), // task_status_change, task_created, etc.
+  triggerConditions: jsonb('trigger_conditions').notNull(),
+  actions: jsonb('actions').notNull(),
+  createdById: uuid('created_by_id').notNull().references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// Workflow execution log table
+export const workflowExecutions = pgTable('workflow_executions', {
+  id: uuid('id').primaryKey(),
+  workflowRuleId: uuid('workflow_rule_id').notNull().references(() => workflowRules.id, { onDelete: 'cascade' }),
+  taskId: uuid('task_id').references(() => tasks.id, { onDelete: 'cascade' }),
+  executedAt: timestamp('executed_at').defaultNow(),
+  status: varchar('status', { length: 50 }).notNull().default('success'), // success, failed, partial
+  result: jsonb('result'),
+  errorMessage: text('error_message'),
+});
+
 // Project templates table
 export const projectTemplates = pgTable('project_templates', {
   id: uuid('id').primaryKey(),

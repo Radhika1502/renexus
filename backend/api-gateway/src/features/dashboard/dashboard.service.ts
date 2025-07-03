@@ -255,4 +255,111 @@ export class DashboardService {
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
   }
+
+  async getProjectSummaries(timeRange?: TimeRangeDto): Promise<any[]> {
+    // Get all projects with their tasks
+    const projects = await this.prisma.project.findMany({
+      include: {
+        tasks: {
+          select: {
+            id: true,
+            status: true,
+            dueDate: true,
+            updatedAt: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+
+    return projects.map(project => {
+      const totalTasks = project.tasks.length;
+      const completedTasks = project.tasks.filter(task => task.status === 'done').length;
+      const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      
+      // Determine project status based on progress and due dates
+      let status = 'on track';
+      if (progress === 100) {
+        status = 'completed';
+      } else if (progress < 50) {
+        status = 'behind';
+      } else if (progress < 80) {
+        status = 'at risk';
+      }
+
+      // Find the earliest task creation date as project start
+      const taskDates = project.tasks.map(task => task.createdAt);
+      const startDate = taskDates.length > 0 ? new Date(Math.min(...taskDates.map(d => d.getTime()))) : null;
+      
+      // Find the latest due date as project end
+      const dueDates = project.tasks.filter(task => task.dueDate).map(task => task.dueDate!);
+      const dueDate = dueDates.length > 0 ? new Date(Math.max(...dueDates.map(d => d.getTime()))) : null;
+
+      return {
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        status,
+        progress,
+        tasksTotal: totalTasks,
+        tasksCompleted: completedTasks,
+        dueDate: dueDate?.toISOString(),
+        startDate: startDate?.toISOString()
+      };
+    });
+  }
+
+  async getActivityFeed(limit: number = 10): Promise<any[]> {
+    // Get recent task activities
+    const recentTasks = await this.prisma.task.findMany({
+      orderBy: {
+        updatedAt: 'desc'
+      },
+      include: {
+        project: true
+      },
+      take: limit * 2 // Get more to filter and format
+    });
+
+    const activities = [];
+
+    for (const task of recentTasks) {
+      // Task creation activity
+      activities.push({
+        id: `activity-created-${task.id}`,
+        userId: task.assigneeId || 'system',
+        userName: 'System User', // In a real implementation, fetch from user table
+        userAvatar: null,
+        action: 'created task',
+        entityType: 'TASK',
+        entityName: task.title,
+        entityId: task.id,
+        projectId: task.projectId,
+        projectName: task.project?.name || 'Unknown Project',
+        timestamp: task.createdAt.toISOString()
+      });
+
+      // Task status change activity (if updated recently)
+      if (task.updatedAt.getTime() !== task.createdAt.getTime()) {
+        activities.push({
+          id: `activity-updated-${task.id}`,
+          userId: task.assigneeId || 'system',
+          userName: 'System User',
+          userAvatar: null,
+          action: `updated task status to ${task.status}`,
+          entityType: 'TASK',
+          entityName: task.title,
+          entityId: task.id,
+          projectId: task.projectId,
+          projectName: task.project?.name || 'Unknown Project',
+          timestamp: task.updatedAt.toISOString()
+        });
+      }
+    }
+
+    // Sort by timestamp and limit
+    return activities
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, limit);
+  }
 }

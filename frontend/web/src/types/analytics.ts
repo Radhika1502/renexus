@@ -176,3 +176,101 @@ export interface ForecastResult {
   }[];
   confidence: number;
 }
+
+// Analytics Types for Task Management
+export interface TaskAnalyticsFilters {
+  startDate?: string;
+  endDate?: string;
+  assignees?: string[];
+  statuses?: string[];
+  priorities?: string[];
+  categories?: string[];
+  tags?: string[];
+  projectId?: string;
+}
+
+export interface TaskMetrics {
+  id: string;
+  taskId: string;
+  taskName: string;
+  status: 'todo' | 'in_progress' | 'review' | 'done' | 'blocked';
+  assignee: string;
+  assigneeId: string;
+  createdDate: string;
+  dueDate: string;
+  completedDate: string | null;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  completionTime: number | null; // in hours
+  tags: string[];
+  category: string;
+  mentions: UserMention[];
+}
+
+export interface UserMention {
+  id: string;
+  userId: string;
+  userName: string;
+  taskId: string;
+  taskTitle: string;
+  mentionedAt: string;
+  context: string;
+}
+
+export interface TaskAnalyticsResponse {
+  tasks: TaskMetrics[];
+  summary: {
+    totalTasks: number;
+    completedTasks: number;
+    averageCompletionTime: number;
+    completionRate: number;
+  };
+  trends: TaskTrend[];
+  filters: TaskAnalyticsFilters;
+}
+
+export interface TaskTrend {
+  date: string;
+  completed: number;
+  created: number;
+  inProgress: number;
+}
+
+export interface UserMentionsResponse {
+  mentions: UserMention[];
+  summary: {
+    totalMentions: number;
+    uniqueTasks: number;
+    averagePerDay: number;
+  };
+  timeframe: string;
+}
+
+export interface PerformanceMetrics {
+  productivity: {
+    tasksCompletedPerDay: number;
+    averageTaskDuration: number;
+    velocityTrend: number[];
+  };
+  quality: {
+    defectRate: number;
+    reworkRate: number;
+    customerSatisfaction: number;
+  };
+  collaboration: {
+    mentionsReceived: number;
+    mentionsGiven: number;
+    collaborationScore: number;
+  };
+}
+
+export interface CompletionTrends {
+  daily: TaskTrend[];
+  weekly: TaskTrend[];
+  monthly: TaskTrend[];
+  projectBreakdown: {
+    projectId: string;
+    projectName: string;
+    completionRate: number;
+    totalTasks: number;
+  }[];
+}

@@ -4,6 +4,7 @@ import { TaskAnalyticsModule } from './features/task-analytics/task-analytics.mo
 import { TeamAnalyticsModule } from './features/team-analytics/team-analytics.module';
 import { WorkflowAutomationModule } from './features/workflow-automation/workflow-automation.module';
 import { TasksModule } from './features/tasks/tasks.module';
+import { ReportsModule } from './features/reports/reports.module';
 import { DashboardModule } from './features/dashboard/dashboard.module';
 import { HealthModule } from './health/health.module';
 import { AppCacheModule } from './cache/cache.module';
@@ -30,6 +31,7 @@ import { DatabaseModule } from './database/database.module';
     TeamAnalyticsModule, 
     WorkflowAutomationModule,
     DashboardModule,
+    ReportsModule,
     
     // Core modules
     HealthModule,

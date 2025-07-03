@@ -1,26 +1,92 @@
 // Task Management Types
+export enum TaskStatus {
+  BACKLOG = 'backlog',
+  TODO = 'todo',
+  IN_PROGRESS = 'inProgress',
+  REVIEW = 'review',
+  DONE = 'done'
+}
+
+export enum TaskPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  URGENT = 'urgent'
+}
+
 export interface Task {
   id: string;
   title: string;
   description: string;
   status: TaskStatus;
   priority: TaskPriority;
-  assigneeId?: string;
-  assignee?: User;
   reporterId: string;
-  reporter?: User;
-  projectId: string;
-  projectKey?: string;
-  epicId?: string;
-  sprintId?: string;
-  dueDate?: string;
-  estimatedHours?: number;
-  loggedHours?: number;
-  labels: string[];
-  attachments: Attachment[];
-  comments: Comment[];
+  projectId?: string;
+  assigneeId?: string;
   createdAt: string;
   updatedAt: string;
+  dueDate?: string;
+  estimatedHours?: number;
+  actualHours?: number;
+  tags?: string[];
+  dependencies?: string[];
+  parentId?: string;
+  relatedTasks?: string[];
+  attachments?: TaskAttachment[];
+  comments?: TaskComment[];
+  timeEntries?: TimeEntry[];
+}
+
+export interface TaskAttachment {
+  id: string;
+  taskId: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  uploadedBy: string;
+  uploadedAt: string;
+}
+
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  createdAt: string;
+  updatedAt: string;
+  mentions?: string[];
+}
+
+export interface TimeEntry {
+  id: string;
+  taskId: string;
+  userId: string;
+  startTime: string;
+  endTime?: string;
+  duration?: number;
+  description?: string;
+  createdAt: string;
+}
+
+export interface TaskFilters {
+  status?: TaskStatus[];
+  priority?: TaskPriority[];
+  assigneeId?: string[];
+  projectId?: string;
+  search?: string;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface TaskBoardColumn {
+  id: TaskStatus;
+  title: string;
+  tasks: Task[];
 }
 
 export interface User {
@@ -48,24 +114,6 @@ export interface Comment {
   mentions?: User[];
   createdAt: string;
   updatedAt: string;
-}
-
-export type TaskStatus = 'backlog' | 'todo' | 'inProgress' | 'review' | 'done';
-
-export type TaskPriority = 'lowest' | 'low' | 'medium' | 'high' | 'highest';
-
-export interface TaskFilters {
-  status?: TaskStatus[];
-  priority?: TaskPriority[];
-  assigneeId?: string;
-  reporterId?: string;
-  projectId?: string;
-  epicId?: string;
-  sprintId?: string;
-  search?: string;
-  labels?: string[];
-  dueDateStart?: string;
-  dueDateEnd?: string;
 }
 
 export interface CreateTaskInput {

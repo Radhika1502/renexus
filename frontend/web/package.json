@@ -8,7 +8,7 @@
     "test": "jest --verbose"
   },
   "dependencies": {
-    "@renexus/ui-components": "file:../../../backend/packages/ui-components",
+    "@renexus/ui-components": "file:../../packages/ui",
     "@tanstack/react-query": "^5.8.4",
     "@tanstack/react-query-devtools": "^5.8.4",
     "axios": "^1.6.2",

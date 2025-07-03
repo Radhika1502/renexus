@@ -1,4 +1,5 @@
-import { Controller, Get, Param, UseInterceptors, CacheInterceptor } from '@nestjs/common';
+import { Controller, Get, Param, UseInterceptors } from '@nestjs/common';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 import { PrismaService } from '../../prisma.service';
 import { Task, TimeLog  } from "../../shared/types/models";
 

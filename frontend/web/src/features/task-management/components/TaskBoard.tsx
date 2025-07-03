@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import React, { useState, useEffect } from 'react';
 import { Task, TaskStatus } from '../types';
 import { TaskCard } from './TaskCard';
 import { useUpdateTask } from '../hooks/useUpdateTask';
-import { Button, Skeleton, Select } from '@renexus/ui-components';
+import { Button, Skeleton, Select } from './ui/Dialog';
 import { Plus, Settings } from 'lucide-react';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
 
 interface TaskBoardProps {
@@ -18,7 +16,6 @@ interface TaskBoardProps {
 
 interface TaskBoardSettings {
   pageSize: number;
-  renderMode: 'standard' | 'virtual';
   enableOfflineCache: boolean;
 }
 
@@ -38,7 +35,6 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
   const { updateTask } = useUpdateTask();
   const [settings, setSettings] = useLocalStorage<TaskBoardSettings>('taskboard-settings', {
     pageSize: 20,
-    renderMode: 'standard',
     enableOfflineCache: true
   });
   
@@ -47,11 +43,11 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
   
   // Define columns for the board
   const columns: TaskColumn[] = [
-    { id: 'backlog', title: 'Backlog', tasks: [] },
-    { id: 'todo', title: 'To Do', tasks: [] },
-    { id: 'inProgress', title: 'In Progress', tasks: [] },
-    { id: 'review', title: 'Review', tasks: [] },
-    { id: 'done', title: 'Done', tasks: [] },
+    { id: TaskStatus.BACKLOG, title: 'Backlog', tasks: [] },
+    { id: TaskStatus.TODO, title: 'To Do', tasks: [] },
+    { id: TaskStatus.IN_PROGRESS, title: 'In Progress', tasks: [] },
+    { id: TaskStatus.IN_REVIEW, title: 'Review', tasks: [] },
+    { id: TaskStatus.DONE, title: 'Done', tasks: [] },
   ];
   
   // Distribute tasks into columns
@@ -83,53 +79,18 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
     setCurrentPage(initialPages);
   }, []);
   
-  const handleDragEnd = async (result: DropResult) => {
-    const { destination, source, draggableId } = result;
-    
-    // Dropped outside a valid droppable area
-    if (!destination) return;
-    
-    // Dropped in the same position
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
-    
-    // Find the task that was dragged
-    const task = tasks.find(t => t.id === draggableId);
-    if (!task) return;
-    
-    // Update the task status
-    await updateTask({
-      id: task.id,
-      status: destination.droppableId as TaskStatus,
-    });
-  };
-  
-  // Create virtualizers for each column
-  const columnVirtualizers = useMemo(() => {
-    if (settings.renderMode !== 'virtual') return {};
-    
-    const virtualizers: Record<string, any> = {};
-    columns.forEach(column => {
-      virtualizers[column.id] = useVirtualizer({
-        count: column.tasks.length,
-        getScrollElement: () => document.getElementById(`column-${column.id}`),
-        estimateSize: () => 120, // Estimated height of a task card
-        overscan: 5
-      });
-    });
-    return virtualizers;
-  }, [columns, tasks, settings.renderMode]);
-  
   // Function to get paginated tasks
   const getPaginatedTasks = (columnId: TaskStatus, tasks: Task[]) => {
-    if (settings.renderMode === 'virtual') return tasks;
-    
     const page = currentPage[columnId] || 0;
     return tasks.slice(page * settings.pageSize, (page + 1) * settings.pageSize);
+  };
+  
+  // Handle task status change (simplified - without drag and drop)
+  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+    await updateTask({
+      id: taskId,
+      status: newStatus,
+    });
   };
   
   // Handle offline support
@@ -162,17 +123,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
       {showSettings && (
         <div className="bg-gray-50 p-4 rounded-md mb-4 border">
           <h3 className="text-sm font-medium mb-2">Board Settings</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="text-xs mb-1 block">Render Mode</label>
-              <Select
-                value={settings.renderMode}
-                onValueChange={(value) => setSettings({...settings, renderMode: value as 'standard' | 'virtual'})}
-              >
-                <option value="standard">Standard</option>
-                <option value="virtual">Virtual (for 1000+ tasks)</option>
-              </Select>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-xs mb-1 block">Page Size</label>
               <Select
@@ -199,102 +150,79 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({
         </div>
       )}
       
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {columns.map(column => (
-            <div 
-              key={column.id} 
-              className="bg-white dark:bg-gray-800 rounded-lg border shadow-sm"
-            >
-              <div className="p-3 border-b flex justify-between items-center">
-                <h3 className="font-medium">{column.title}</h3>
-                <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
-                  {isLoading ? '...' : column.tasks.length}
-                </span>
-              </div>
-              
-              <Droppable droppableId={column.id}>
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className="p-2 min-h-[400px]"
-                  >
-                    {isLoading ? (
-                      // Show skeleton cards while loading
-                      Array.from({ length: 3 }).map((_, index) => (
-                        <div key={index} className="mb-2">
-                          <Skeleton className="h-24 w-full rounded-md" />
-                        </div>
-                      ))
-                    ) : column.tasks.length > 0 ? (
-                      settings.renderMode === 'virtual' ? (
-                        <div 
-                          style={{
-                            height: `${columnVirtualizers[column.id]?.getTotalSize() || 0}px`,
-                            position: 'relative'
-                          }}
-                        >
-                          {columnVirtualizers[column.id]?.getVirtualItems().map((virtualRow) => (
-                            <Draggable 
-                              key={column.tasks[virtualRow.index].id} 
-                              draggableId={column.tasks[virtualRow.index].id} 
-                              index={virtualRow.index}
-                            >
-                              {(provided) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className="mb-2 absolute w-full"
-                                  style={{
-                                    top: 0,
-                                    left: 0,
-                                    height: `${virtualRow.size}px`,
-                                    transform: `translateY(${virtualRow.start}px)`,
-                                  }}
-                                >
-                                  <TaskCard 
-                                    task={column.tasks[virtualRow.index]} 
-                                    onClick={() => onSelectTask && onSelectTask(column.tasks[virtualRow.index])} 
-                                  />
-                                </div>
-                              )}
-                            </Draggable>
-                          ))}
-                        </div>
-                      ) : (
-                        getPaginatedTasks(column.id, column.tasks).map((task, index) => (
-                          <Draggable key={task.id} draggableId={task.id} index={index}>
-                            {(provided) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className="mb-2"
-                              >
-                                <TaskCard 
-                                  task={task} 
-                                  onClick={() => onSelectTask && onSelectTask(task)} 
-                                />
-                              </div>
-                            )}
-                          </Draggable>
-                        ))
-                      )
-                    ) : (
-                      <div className="flex items-center justify-center h-24 text-gray-400 dark:text-gray-500 text-sm">
-                        No tasks
-                      </div>
-                    )}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        {columns.map(column => (
+          <div 
+            key={column.id} 
+            className="bg-white dark:bg-gray-800 rounded-lg border shadow-sm"
+          >
+            <div className="p-3 border-b flex justify-between items-center">
+              <h3 className="font-medium">{column.title}</h3>
+              <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
+                {isLoading ? '...' : column.tasks.length}
+              </span>
             </div>
-          ))}
-        </div>
-      </DragDropContext>
+            
+            <div className="p-2 min-h-[400px]">
+              {isLoading ? (
+                // Show skeleton cards while loading
+                Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="mb-2">
+                    <Skeleton className="h-24 w-full rounded-md" />
+                  </div>
+                ))
+              ) : column.tasks.length > 0 ? (
+                getPaginatedTasks(column.id, column.tasks).map((task) => (
+                  <div key={task.id} className="mb-2">
+                    <TaskCard 
+                      task={task} 
+                      onClick={() => onSelectTask && onSelectTask(task)} 
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                  <p className="text-sm">No tasks</p>
+                </div>
+              )}
+              
+              {/* Pagination controls */}
+              {column.tasks.length > settings.pageSize && (
+                <div className="mt-4 flex justify-between items-center">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setCurrentPage(prev => ({
+                      ...prev,
+                      [column.id]: Math.max(0, (prev[column.id] || 0) - 1)
+                    }))}
+                    disabled={(currentPage[column.id] || 0) === 0}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-xs text-gray-500">
+                    Page {(currentPage[column.id] || 0) + 1} of {Math.ceil(column.tasks.length / settings.pageSize)}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setCurrentPage(prev => ({
+                      ...prev,
+                      [column.id]: Math.min(
+                        Math.ceil(column.tasks.length / settings.pageSize) - 1,
+                        (prev[column.id] || 0) + 1
+                      )
+                    }))}
+                    disabled={(currentPage[column.id] || 0) >= Math.ceil(column.tasks.length / settings.pageSize) - 1}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
