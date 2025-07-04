@@ -13,7 +13,7 @@ process.env.LOG_LEVEL = 'error';
 process.env.DB_TYPE = 'test'; // Use test database type
 
 // Mock database for testing
-jest.mock('../database/db', () => {
+jest.mock('../packages/database/db', () => {
   const mockDb = {
     execute: jest.fn().mockImplementation((query, params) => {
       // Default mock implementation for database queries
@@ -43,3 +43,4 @@ jest.mock('../database/db', () => {
   
   return { db: mockDb, pool: { end: jest.fn() } };
 });
+

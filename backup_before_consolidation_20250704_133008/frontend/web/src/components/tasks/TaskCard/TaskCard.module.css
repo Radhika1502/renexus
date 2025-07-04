@@ -1,0 +1,126 @@
+.taskCard {
+  background-color: white;
+  border-radius: 4px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  user-select: none;
+}
+
+.taskCard:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.isDragging {
+  opacity: 0.6;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+.taskHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.taskId {
+  font-size: 0.75rem;
+  color: #757575;
+  font-weight: 500;
+}
+
+.taskPriority {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.priorityLow .taskPriority {
+  background-color: #e8f5e9;
+  color: #388e3c;
+}
+
+.priorityMedium .taskPriority {
+  background-color: #fff8e1;
+  color: #ff8f00;
+}
+
+.priorityHigh .taskPriority {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.taskTitle {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+  color: #333;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.taskDescription {
+  font-size: 0.875rem;
+  color: #666;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.taskDueDate {
+  font-size: 0.75rem;
+  color: #757575;
+  margin-bottom: 8px;
+}
+
+.taskAssignee {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.assigneeAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 8px;
+  object-fit: cover;
+}
+
+.assigneeInitial {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  color: #757575;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  margin-right: 8px;
+  font-weight: 600;
+}
+
+.taskAssignee span {
+  font-size: 0.75rem;
+  color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.taskAttachments, .taskDependencies {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: #757575;
+  margin-right: 8px;
+  margin-top: 8px;
+}

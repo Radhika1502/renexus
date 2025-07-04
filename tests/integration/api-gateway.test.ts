@@ -11,7 +11,7 @@ import rateLimit from 'express-rate-limit';
 const app = express();
 
 // Mock the API Gateway
-jest.mock('../../api/gateway', () => {
+jest.mock('../../backend/api-gateway/gateway', () => {
   const express = require('express');
   const app = express();
   
@@ -47,7 +47,7 @@ jest.mock('../../api/gateway', () => {
   return { startServer: jest.fn(), app };
 });
 
-const { app: apiGateway } = require('../../api/gateway');
+const { app: apiGateway } = require('../../backend/api-gateway/gateway');
 
 describe('1.3.3 API Gateway Tests', () => {
   it('should apply security middleware correctly', async () => {
@@ -285,3 +285,4 @@ describe('1.3.4 Error Handling Tests', () => {
     expect(response.body).not.toHaveProperty('error'); // Error details should be undefined in production
   });
 });
+

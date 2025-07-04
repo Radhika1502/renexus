@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { performance } from 'perf_hooks';
-import { db } from '../../database/db';
-import { projects, users, projects_users, tasks } from '../../database/schema';
+import { db } from '../../packag../packages/database/db';
+import { projects, users, projects_users, tasks } from '../../packag../packages/database/schema';
 import { eq, and, sql } from 'drizzle-orm';
 
 describe('Database Performance Tests', () => {
@@ -278,3 +278,4 @@ describe('Database Performance Tests', () => {
     expect(explainOutput).not.toContain('Seq Scan on projects');
   });
 });
+

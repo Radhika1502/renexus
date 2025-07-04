@@ -1,10 +1,10 @@
 // @ts-nocheck
 import { v4 as uuidv4 } from 'uuid';
-import { db } from '../../database/db';
-import { projects, userProjects } from '../../database/schema';
+import { db } from '../../packag../packages/database/db';
+import { projects, userProjects } from '../../packag../packages/database/schema';
 
 // Mock the database
-jest.mock('../../database/db', () => ({
+jest.mock('../../packag../packages/database/db', () => ({
   db: {
     query: {
       projects: {
@@ -210,3 +210,4 @@ describe('1.3.1 Project Management Service Tests', () => {
     expect(taskNames1).toEqual(['Execution', 'Planning', 'Review'].sort());
   });
 });
+

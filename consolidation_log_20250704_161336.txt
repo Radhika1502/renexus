@@ -1,0 +1,32 @@
+2025-07-04 16:13:36 [INFO] Creating backup directory: backup_final_consolidation_20250704_161336
+2025-07-04 16:13:36 [INFO] === Step 1: Consolidating database directories ===
+2025-07-04 16:13:36 [INFO] Backing up backend\database to backup_final_consolidation_20250704_161336\backend_database
+2025-07-04 16:13:36 [INFO] Merging database directories: backend\database -> packages\database
+2025-07-04 16:13:36 [INFO] Successfully merged database directories
+2025-07-04 16:13:36 [INFO] Removing backend/database: backend\database
+2025-07-04 16:13:36 [INFO] Successfully removed backend/database
+2025-07-04 16:13:36 [INFO] === Step 2: Consolidating packages directories ===
+2025-07-04 16:13:36 [INFO] Backing up backend\packages to backup_final_consolidation_20250704_161336\backend_packages
+2025-07-04 16:15:36 [INFO] Merging packages directories: backend\packages -> packages
+2025-07-04 16:17:56 [ERROR] Error merging packages directories: Cannot find path 'C:\Users\HP\Renexus\backend\packages\ui-components\node_modules\eslint-plugin-jsx-a11y\node_modules\aria-query\lib\etc\roles\dpub\docNoticeRole.js' because it does not exist.
+2025-07-04 16:17:56 [INFO] Removing backend/packages: backend\packages
+2025-07-04 16:18:15 [INFO] Successfully removed backend/packages
+2025-07-04 16:18:15 [INFO] === Step 3: Consolidating shared directories ===
+2025-07-04 16:18:15 [INFO] Backing up shared to backup_final_consolidation_20250704_161336\root_shared
+2025-07-04 16:18:15 [INFO] Merging shared directories: shared -> packages\shared
+2025-07-04 16:18:15 [INFO] Successfully merged shared directories
+2025-07-04 16:18:15 [INFO] Removing root shared: shared
+2025-07-04 16:18:15 [INFO] Successfully removed root shared
+2025-07-04 16:18:16 [INFO] === Step 4: Consolidating services directories ===
+2025-07-04 16:18:16 [INFO] Backing up services to backup_final_consolidation_20250704_161336\root_services
+2025-07-04 16:18:16 [INFO] Merging services directories: services -> backend\services
+2025-07-04 16:18:16 [INFO] Successfully merged services directories
+2025-07-04 16:18:16 [INFO] Removing root services: services
+2025-07-04 16:18:16 [INFO] Successfully removed root services
+2025-07-04 16:18:16 [INFO] === Step 5: Consolidating config directories ===
+2025-07-04 16:18:16 [INFO] Backing up config to backup_final_consolidation_20250704_161336\root_config
+2025-07-04 16:18:16 [INFO] Merging config directories: config -> backend\config
+2025-07-04 16:18:16 [INFO] Successfully merged config directories
+2025-07-04 16:18:16 [INFO] Removing root config: config
+2025-07-04 16:18:16 [INFO] Successfully removed root config
+2025-07-04 16:18:16 [INFO] === Step 6: Fixing import paths ===

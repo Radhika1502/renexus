@@ -7,11 +7,11 @@
 // Using a mock UUID function since we're just testing
 const uuidv4 = () => 'test-uuid-' + Math.random().toString(36).substring(2, 15);
 
-import { db } from '../../database/db';
-import { sessions } from '../../database/schema';
+import { db } from '../../packag../packages/database/db';
+import { sessions } from '../../packag../packages/database/schema';
 
 // Mock dependencies
-jest.mock('../../database/db', () => ({
+jest.mock('../../packag../packages/database/db', () => ({
   db: {
     query: {
       sessions: {
@@ -198,3 +198,4 @@ describe('Session Service Tests', () => {
     });
   });
 });
+

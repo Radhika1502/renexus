@@ -6,7 +6,22 @@
  */
 
 const { Pool } = require('pg');
-const { db: realDb } = require('../../database/db');
+// Try to import database from multiple possible locations
+let realDb;
+try {
+  realDb = require('../../packag../packages/database/db').db;
+} catch (e1) {
+  try {
+    realDb = require('../../backe../packages/database/db').db;
+  } catch (e2) {
+    try {
+      realDb = require('../../db').default;
+    } catch (e3) {
+      console.warn('Could not import real database, using mocks only');
+      realDb = null;
+    }
+  }
+}
 
 // Mock data for use when real DB connection fails
 const mockData = {
@@ -104,7 +119,7 @@ const mockData = {
 // Export with the same interface as the real db module
 const testDb = {
   // Flag to track if we're using real DB
-  isUsingRealDb: true,
+  isUsingRealDb: !!realDb,
   
   /**
    * Execute a SQL query with fallback to mock data
@@ -114,7 +129,7 @@ const testDb = {
    */
   async execute(text, params = []) {
     try {
-      if (!this.isUsingRealDb) {
+      if (!this.isUsingRealDb || !realDb) {
         return this._mockExecute(text, params);
       }
       
@@ -210,7 +225,7 @@ const testDb = {
    */
   async transaction(callback) {
     try {
-      if (!this.isUsingRealDb) {
+      if (!this.isUsingRealDb || !realDb) {
         return callback(this);
       }
       
@@ -226,7 +241,7 @@ const testDb = {
    * Close database connections
    */
   async close() {
-    if (this.isUsingRealDb) {
+    if (this.isUsingRealDb && realDb && realDb.close) {
       try {
         await realDb.close();
       } catch (error) {
@@ -242,9 +257,13 @@ const testDb = {
 async function setupTestDatabase() {
   try {
     // Check if we can connect to real DB
-    await realDb.execute('SELECT now()');
-    testDb.isUsingRealDb = true;
-    console.log('Successfully connected to real database');
+    if (realDb && realDb.execute) {
+      await realDb.execute('SELECT now()');
+      testDb.isUsingRealDb = true;
+      console.log('Successfully connected to real database');
+    } else {
+      throw new Error('Real database module not available');
+    }
     return testDb;
   } catch (error) {
     console.warn('Cannot connect to real database, using mock data:', error.message);
@@ -258,3 +277,4 @@ module.exports = {
   setupTestDatabase,
   mockData
 };
+

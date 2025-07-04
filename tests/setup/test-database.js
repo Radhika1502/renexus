@@ -7,7 +7,7 @@
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
-const { db, pool } = require('../../database/db');
+const { db, pool } = require('../../packag../packages/database/db');
 
 // Test data for seeding the database
 const TEST_DATA = {
@@ -257,3 +257,4 @@ module.exports = {
   cleanupTestDatabase,
   TEST_DATA
 };
+

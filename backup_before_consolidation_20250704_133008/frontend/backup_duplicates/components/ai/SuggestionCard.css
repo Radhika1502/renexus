@@ -1,0 +1,250 @@
+.suggestion-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.suggestion-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.suggestion-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.suggestion-card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #202124;
+  flex: 1;
+}
+
+.suggestion-card-priority {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.priority-high {
+  background-color: #fce8e6;
+  color: #d93025;
+}
+
+.priority-medium {
+  background-color: #fef7e0;
+  color: #f29900;
+}
+
+.priority-low {
+  background-color: #e6f4ea;
+  color: #1e8e3e;
+}
+
+.suggestion-card-description {
+  font-size: 14px;
+  color: #5f6368;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.suggestion-card-metadata {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.metadata-item {
+  display: flex;
+  align-items: center;
+}
+
+.metadata-label {
+  color: #5f6368;
+  width: 80px;
+  font-weight: 500;
+}
+
+.metadata-value {
+  color: #202124;
+}
+
+.confidence-bar {
+  flex: 1;
+  height: 8px;
+  background-color: #f1f3f4;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  margin-right: 8px;
+}
+
+.confidence-fill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.confidence-high .confidence-fill {
+  background-color: #1e8e3e;
+}
+
+.confidence-medium .confidence-fill {
+  background-color: #f29900;
+}
+
+.confidence-low .confidence-fill {
+  background-color: #d93025;
+}
+
+.confidence-text {
+  position: absolute;
+  right: -40px;
+  top: -3px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.confidence-high .confidence-text {
+  color: #1e8e3e;
+}
+
+.confidence-medium .confidence-text {
+  color: #f29900;
+}
+
+.confidence-low .confidence-text {
+  color: #d93025;
+}
+
+.suggestion-card-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.action-button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.accept-button {
+  background-color: #4a86e8;
+  color: white;
+  border: none;
+}
+
+.accept-button:hover {
+  background-color: #3b78e7;
+}
+
+.reject-button {
+  background-color: #f1f3f4;
+  color: #5f6368;
+  border: 1px solid #dadce0;
+}
+
+.reject-button:hover {
+  background-color: #e8eaed;
+}
+
+.feedback-button {
+  background-color: transparent;
+  color: #4a86e8;
+  border: none;
+}
+
+.feedback-button:hover {
+  background-color: rgba(74, 134, 232, 0.1);
+}
+
+.feedback-form {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e9ecef;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.feedback-options {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.feedback-option {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.feedback-option:hover {
+  background-color: #f1f3f4;
+}
+
+.feedback-option.selected {
+  background-color: #e8f0fe;
+  border-color: #4a86e8;
+  color: #4a86e8;
+}
+
+.feedback-textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-size: 13px;
+  resize: vertical;
+  min-height: 80px;
+  margin-bottom: 12px;
+  font-family: inherit;
+}
+
+.feedback-textarea:focus {
+  border-color: #4a86e8;
+  outline: none;
+}
+
+.submit-feedback-button {
+  background-color: #4a86e8;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  float: right;
+}
+
+.submit-feedback-button:disabled {
+  background-color: #dadce0;
+  cursor: not-allowed;
+}
+
+.submit-feedback-button:not(:disabled):hover {
+  background-color: #3b78e7;
+}

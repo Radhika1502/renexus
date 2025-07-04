@@ -2,7 +2,7 @@ import { jest, describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import request from 'supertest';
 import express, { Application } from 'express';
 import apiRoutes from '../../api/routes';
-import { db } from '../../database/db';
+import { db } from '../../packag../packages/database/db';
 
 // Mock environment variables
 process.env.JWT_SECRET = 'test-jwt-secret';
@@ -25,7 +25,7 @@ jest.mock('../../services/auth/auth.service', () => ({
 }));
 
 // Mock database queries
-jest.mock('../../database/db', () => ({
+jest.mock('../../packag../packages/database/db', () => ({
   db: {
     query: {
       users: {
@@ -263,3 +263,4 @@ describe('API E2E Tests', () => {
     });
   });
 });
+

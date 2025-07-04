@@ -14,7 +14,7 @@
     "test-db": "ts-node src/scripts/test-connection.ts"
   },
   "dependencies": {
-    "@renexus/api-types": "*",
+    "@renexus/api-types": "file:../../packages/api-types",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

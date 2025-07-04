@@ -1,8 +1,8 @@
 // @ts-nocheck
 import supertest from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
-import { db } from '../../database/db';
-import { users } from '../../database/schema';
+import { db } from '../../packag../packages/database/db';
+import { users } from '../../packag../packages/database/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
@@ -12,7 +12,7 @@ import express from 'express';
 const app = express();
 
 // Mock dependencies and services
-jest.mock('../../database/db', () => ({
+jest.mock('../../packag../packages/database/db', () => ({
   db: {
     query: {
       users: {
@@ -400,3 +400,4 @@ describe('1.2 Authentication & User Management Tests', () => {
     });
   });
 });
+

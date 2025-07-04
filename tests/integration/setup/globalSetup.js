@@ -32,7 +32,7 @@ module.exports = async function() {
     // Import the schema (assumes schema is defined in SQL files)
     const fs = require('fs');
     const path = require('path');
-    const schemaSQL = fs.readFileSync(path.resolve(__dirname, '../../../src/database/schema.sql'), 'utf8');
+    const schemaSQL = fs.readFileSync(path.resolve(__dirname, '../../../s../packages/database/schema.sql'), 'utf8');
     
     await pool.query(schemaSQL);
     
@@ -54,3 +54,4 @@ module.exports = async function() {
 
   console.log('Integration test environment setup completed');
 };
+

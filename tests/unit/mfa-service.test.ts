@@ -19,10 +19,10 @@ jest.mock('qrcode', () => ({
 }));
 
 // Import dependencies after mocks
-import { db } from '../../database/db';
-import { users } from '../../database/schema';
+import { db } from '../../packag../packages/database/db';
+import { users } from '../../packag../packages/database/schema';
 
-jest.mock('../../database/db', () => ({
+jest.mock('../../packag../packages/database/db', () => ({
   db: {
     query: {
       users: {
@@ -191,3 +191,4 @@ describe('MFA Service Tests', () => {
     });
   });
 });
+

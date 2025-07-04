@@ -1,10 +1,10 @@
 // @ts-nocheck
 import { v4 as uuidv4 } from 'uuid';
-import { db } from '../../database/db';
-import { tasks } from '../../database/schema';
+import { db } from '../../packag../packages/database/db';
+import { tasks } from '../../packag../packages/database/schema';
 
 // Mock the database
-jest.mock('../../database/db', () => ({
+jest.mock('../../packag../packages/database/db', () => ({
   db: {
     query: {
       tasks: {
@@ -250,3 +250,4 @@ describe('1.3.2 Task Management Service Tests', () => {
     expect(history[1].field).toBe('assignedTo');
   });
 });
+

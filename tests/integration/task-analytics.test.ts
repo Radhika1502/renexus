@@ -14,7 +14,7 @@ import { TaskAnalyticsService } from '../../apps/api/src/features/task-analytics
 import { testDb } from '../setup/test-db';
 
 // Only mock the authentication - we'll use real implementations for everything else
-jest.mock('../../apps/api/src/auth/auth.guard', () => {
+jest.mock('../../backend/api-gateway/src/auth/auth.guard', () => {
   return {
     AuthGuard: jest.fn().mockImplementation(() => {
       return {
@@ -170,3 +170,4 @@ describe('TaskAnalyticsController (Integration)', () => {
     });
   });
 });
+

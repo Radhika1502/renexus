@@ -1,9 +1,9 @@
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { TaskService } from '../../../services/tasks/task.service';
-import { db } from '../../../database/db';
+import { db } from '../../../packag../packages/database/db';
 
 // Mock the database
-jest.mock('../../../database/db', () => ({
+jest.mock('../../../packag../packages/database/db', () => ({
   db: {
     insert: jest.fn().mockReturnThis(),
     values: jest.fn().mockReturnThis(),
@@ -271,3 +271,4 @@ describe('TaskService', () => {
     });
   });
 });
+

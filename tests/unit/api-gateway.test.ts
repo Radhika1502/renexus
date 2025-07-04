@@ -23,7 +23,7 @@ jest.mock('express', () => {
 });
 
 // Mock middleware
-jest.mock('../../middleware/auth', () => ({
+jest.mock('../../backend/middleware/auth', () => ({
   authenticate: jest.fn()
 }));
 
@@ -61,3 +61,4 @@ describe('API Gateway Tests', () => {
     });
   });
 });
+

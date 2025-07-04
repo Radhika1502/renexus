@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 // Mock modules before tests
-jest.mock('../../database/db', () => ({
+jest.mock('../../packag../packages/database/db', () => ({
   db: {
     select: jest.fn().mockReturnThis(),
     from: jest.fn().mockReturnThis(),
@@ -19,7 +19,7 @@ jest.mock('../../database/db', () => ({
 }));
 
 // Import after mocking
-import { db } from '../../database/db';
+import { db } from '../../packag../packages/database/db';
 
 describe('End-to-End Flow Tests', () => {
   // Test data
@@ -165,3 +165,4 @@ describe('End-to-End Flow Tests', () => {
     });
   });
 });
+

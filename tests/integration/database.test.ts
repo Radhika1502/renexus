@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { db } from '../../database/db';
+import { db } from '../../packag../packages/database/db';
 import { sql } from 'drizzle-orm';
 
 describe('1.1 Database & Migration Tests', () => {
@@ -241,3 +241,4 @@ describe('1.1 Database & Migration Tests', () => {
     });
   });
 });
+

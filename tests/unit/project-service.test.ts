@@ -11,10 +11,10 @@ const uuidv4 = () => 'test-uuid-' + Math.random().toString(36).substring(2, 15);
 type MockDB = any;
 
 // Mock imports
-import { db } from '../../database/db';
+import { db } from '../../packag../packages/database/db';
 
 // Mock database with explicit 'any' type to avoid TypeScript errors
-jest.mock('../../database/db', () => {
+jest.mock('../../packag../packages/database/db', () => {
   // Create a mock object with any type to avoid TypeScript errors
   const mockDb = {
     query: {
@@ -318,3 +318,4 @@ describe('Project Service Tests', () => {
     });
   });
 });
+

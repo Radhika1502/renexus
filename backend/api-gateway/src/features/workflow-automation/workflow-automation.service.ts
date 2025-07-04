@@ -59,6 +59,9 @@ export class WorkflowAutomationService {
     });
     
     for (const task of stalledTasks as Task[]) {
+      const lastUpdate = task.updatedAt ? new Date(task.updatedAt) : new Date();
+      const daysSinceUpdate = Math.floor((Date.now() - lastUpdate.getTime()) / (1000 * 3600 * 24));
+      
       const suggestion: TaskSuggestion = {
         id: `prioritize-${task.id}-${Date.now()}`,
         taskId: task.id,
@@ -66,7 +69,7 @@ export class WorkflowAutomationService {
         description: task.description || '',
         suggestedAction: 'prioritize',
         confidence: 0.75,
-        reason: `This task has been stalled for ${Math.floor((Date.now() - new Date(task.updatedAt).getTime()) / (1000 * 3600 * 24))} days.`,
+        reason: `This task has been stalled for ${daysSinceUpdate} days.`,
         createdAt: new Date()
       };
       

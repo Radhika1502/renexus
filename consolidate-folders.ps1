@@ -1,130 +1,251 @@
-# Script to consolidate duplicate frontend and backend folders
+# Consolidate duplicate directories in the Renexus project
+$ErrorActionPreference = "Stop"
+$backupDir = "backup_before_consolidation_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+$logFile = "directory_consolidation_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
 
-$rootDir = "."
-$backupDir = "temp_consolidation_backup_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+# Create backup directory
+Write-Host "Creating backup directory: $backupDir"
+New-Item -Path $backupDir -ItemType Directory -Force | Out-Null
 
-# Create a backup directory
-New-Item -ItemType Directory -Path $backupDir | Out-Null
-Write-Host "Created backup directory: $backupDir" -ForegroundColor Cyan
-
-# Function to safely move and merge directories
-function Move-And-Merge-Directory {
+# Helper functions
+function Write-Log {
     param (
-        [string]$source,
-        [string]$destination,
-        [string]$type
+        [string]$Message
     )
     
-    if (-not (Test-Path $source)) {
-        Write-Host "Source $type directory not found: $source" -ForegroundColor Yellow
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    "$timestamp - $Message" | Out-File -FilePath $logFile -Append
+    Write-Host $Message
+}
+
+function Backup-Directory {
+    param (
+        [string]$Path
+    )
+    
+    if (Test-Path $Path) {
+        $relativePath = $Path -replace "^\.\\", ""
+        $targetPath = Join-Path $backupDir $relativePath
+        $targetDir = Split-Path -Path $targetPath -Parent
+        
+        if (-not (Test-Path $targetDir)) {
+            New-Item -Path $targetDir -ItemType Directory -Force | Out-Null
+        }
+        
+        Write-Log "Backing up: $Path -> $targetPath"
+        Copy-Item -Path $Path -Destination $targetPath -Recurse -Force
+    }
+}
+
+function Merge-Directory {
+    param (
+        [string]$Source,
+        [string]$Destination,
+        [string]$Label
+    )
+    
+    if (-not (Test-Path $Source)) {
+        Write-Log "Source directory does not exist: $Source"
         return
     }
     
-    Write-Host "`nProcessing $type..." -ForegroundColor Cyan
-    Write-Host "Source: $source"
-    Write-Host "Destination: $destination"
-    
-    # If destination exists, back it up first
-    if (Test-Path $destination) {
-        $backupPath = Join-Path $backupDir (Split-Path $destination -Leaf)
-        Write-Host "Backing up existing $type to: $backupPath" -ForegroundColor Yellow
-        
-        try {
-            # Create the backup directory if it doesn't exist
-            if (-not (Test-Path (Split-Path $backupPath -Parent))) {
-                New-Item -ItemType Directory -Path (Split-Path $backupPath -Parent) -Force | Out-Null
-            }
-            
-            # Copy the existing destination to backup
-            robocopy $destination $backupPath /E /MOVE /COPYALL /R:1 /W:1 /NP /LOG+:"$backupDir\backup_${type}_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
-            
-            # Verify backup was successful
-            if (Test-Path $backupPath) {
-                Write-Host "Successfully backed up existing $type" -ForegroundColor Green
-            } else {
-                Write-Host "Warning: Backup of $type may have failed" -ForegroundColor Yellow
-            }
-        } catch {
-            Write-Host "Error backing up $type : $_" -ForegroundColor Red
-            return
-        }
+    if (-not (Test-Path $Destination)) {
+        New-Item -Path $Destination -ItemType Directory -Force | Out-Null
     }
     
-    # Move the source to destination
-    try {
-        Write-Host "Moving $source to $destination..." -ForegroundColor Cyan
+    Write-Log "Merging $Label`: $Source -> $Destination"
+    
+    # Copy all items from source to destination
+    Get-ChildItem -Path $Source -Recurse | ForEach-Object {
+        $targetPath = $_.FullName -replace [regex]::Escape($Source), $Destination
         
-        # Create parent directory if it doesn't exist
-        $parentDir = Split-Path $destination -Parent
-        if (-not (Test-Path $parentDir)) {
-            New-Item -ItemType Directory -Path $parentDir -Force | Out-Null
+        if ($_.PSIsContainer) {
+            if (-not (Test-Path $targetPath)) {
+                New-Item -Path $targetPath -ItemType Directory -Force | Out-Null
+            }
+        } else {
+            $targetDir = Split-Path -Path $targetPath -Parent
+            if (-not (Test-Path $targetDir)) {
+                New-Item -Path $targetDir -ItemType Directory -Force | Out-Null
+            }
+            
+            # If file exists in destination and is different, create backup
+            if (Test-Path $targetPath) {
+                $sourceContent = Get-Content -Path $_.FullName -Raw -ErrorAction SilentlyContinue
+                $targetContent = Get-Content -Path $targetPath -Raw -ErrorAction SilentlyContinue
+                
+                if ($sourceContent -ne $targetContent) {
+                    Copy-Item -Path $targetPath -Destination "$targetPath.bak" -Force
+                    Write-Log "Created backup of different file: $targetPath.bak"
+                }
+            }
+            
+            Copy-Item -Path $_.FullName -Destination $targetPath -Force
         }
-        
-        # If destination exists, remove it first
-        if (Test-Path $destination) {
-            Remove-Item -Path $destination -Recurse -Force -ErrorAction Stop
-        }
-        
-        # Move the directory
-        Move-Item -Path $source -Destination $destination -Force -ErrorAction Stop
-        
-        Write-Host "Successfully moved $type" -ForegroundColor Green
-    } catch {
-        Write-Host "Error moving $type : $_" -ForegroundColor Red
     }
 }
 
-# Process backend folders
-$appsBackend = Join-Path $rootDir "apps\backend"
-$rootBackend = Join-Path $rootDir "backend"
+# 1. Backup all directories that will be modified
+Write-Log "Backing up directories before consolidation..."
+Backup-Directory -Path ".\backend\api"
+Backup-Directory -Path ".\backend\api-gateway"
+Backup-Directory -Path ".\backend\database"
+Backup-Directory -Path ".\packages\database"
+Backup-Directory -Path ".\backend\packages"
+Backup-Directory -Path ".\frontend\backup_duplicates"
+Backup-Directory -Path ".\frontend\web"
+Backup-Directory -Path ".\shared"
+Backup-Directory -Path ".\packages\shared"
 
-# Determine which backend to keep (prefer the one in the root)
-if (Test-Path $rootBackend) {
-    # Keep the root backend, remove the one in apps
-    if (Test-Path $appsBackend) {
-        Write-Host "`nRemoving duplicate backend from apps directory..." -ForegroundColor Cyan
-        Remove-Item -Path $appsBackend -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "Removed duplicate backend from apps directory" -ForegroundColor Green
+# 2. Consolidate backend API directories
+Write-Log "Consolidating backend API directories..."
+if ((Test-Path ".\backend\api") -and (Test-Path ".\backend\api-gateway")) {
+    Merge-Directory -Source ".\backend\api" -Destination ".\backend\api-gateway" -Label "backend API"
+    
+    # Create symbolic link for backward compatibility
+    if (Test-Path ".\backend\api") {
+        Remove-Item -Path ".\backend\api" -Recurse -Force
     }
-} elseif (Test-Path $appsBackend) {
-    # Move the backend from apps to root
-    Move-And-Merge-Directory -source $appsBackend -destination $rootBackend -type "backend"
+    cmd /c mklink /D ".\backend\api" ".\backend\api-gateway"
 }
 
-# Process frontend folders
-$appsFrontend = Join-Path $rootDir "apps\frontend"
-$rootFrontend = Join-Path $rootDir "frontend"
-
-# Determine which frontend to keep (prefer the one in the root)
-if (Test-Path $rootFrontend) {
-    # Keep the root frontend, remove the one in apps
-    if (Test-Path $appsFrontend) {
-        Write-Host "`nRemoving duplicate frontend from apps directory..." -ForegroundColor Cyan
-        Remove-Item -Path $appsFrontend -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "Removed duplicate frontend from apps directory" -ForegroundColor Green
+# 3. Consolidate database directories
+Write-Log "Consolidating database directories..."
+if ((Test-Path ".\backend\database") -and (Test-Path ".\packages\database")) {
+    Merge-Directory -Source ".\backend\database" -Destination ".\packages\database" -Label "database"
+    
+    # Create symbolic link for backward compatibility
+    if (Test-Path ".\backend\database") {
+        Remove-Item -Path ".\backend\database" -Recurse -Force
     }
-} elseif (Test-Path $appsFrontend) {
-    # Move the frontend from apps to root
-    Move-And-Merge-Directory -source $appsFrontend -destination $rootFrontend -type "frontend"
+    cmd /c mklink /D ".\backend\database" ".\packages\database"
 }
 
-# Remove empty apps directory if it exists
-$appsDir = Join-Path $rootDir "apps"
-if (Test-Path $appsDir) {
-    $items = Get-ChildItem -Path $appsDir -Force
-    if ($items.Count -eq 0) {
-        Write-Host "`nRemoving empty apps directory..." -ForegroundColor Cyan
-        Remove-Item -Path $appsDir -Force
-        Write-Host "Removed empty apps directory" -ForegroundColor Green
-    } else {
-        Write-Host "`nApps directory is not empty. Contents:" -ForegroundColor Yellow
-        Get-ChildItem -Path $appsDir | Format-Table Name, LastWriteTime
+# 4. Move backend/packages to root packages
+Write-Log "Moving backend packages to root packages..."
+if (Test-Path ".\backend\packages") {
+    Merge-Directory -Source ".\backend\packages" -Destination ".\packages" -Label "packages"
+    
+    if (Test-Path ".\backend\packages") {
+        Remove-Item -Path ".\backend\packages" -Recurse -Force
     }
 }
 
-# Show final project structure
-Write-Host "`nFinal project structure:" -ForegroundColor Cyan
-Get-ChildItem -Directory | Select-Object Name, LastWriteTime | Format-Table -AutoSize
+# 5. Consolidate frontend duplicates
+Write-Log "Consolidating frontend duplicates..."
+if (Test-Path ".\frontend\backup_duplicates") {
+    # Components
+    if (Test-Path ".\frontend\backup_duplicates\components") {
+        Merge-Directory -Source ".\frontend\backup_duplicates\components" -Destination ".\frontend\web\src\components" -Label "frontend components"
+    }
+    
+    # Pages
+    if (Test-Path ".\frontend\backup_duplicates\pages") {
+        Merge-Directory -Source ".\frontend\backup_duplicates\pages" -Destination ".\frontend\web\pages" -Label "frontend pages"
+    }
+    
+    # Services
+    if (Test-Path ".\frontend\backup_duplicates\services") {
+        Merge-Directory -Source ".\frontend\backup_duplicates\services" -Destination ".\frontend\web\src\services" -Label "frontend services"
+    }
+    
+    # Types
+    if (Test-Path ".\frontend\backup_duplicates\types") {
+        Merge-Directory -Source ".\frontend\backup_duplicates\types" -Destination ".\frontend\web\src\types" -Label "frontend types"
+    }
+    
+    # Public
+    if (Test-Path ".\frontend\backup_duplicates\public") {
+        Merge-Directory -Source ".\frontend\backup_duplicates\public" -Destination ".\frontend\web\public" -Label "frontend public"
+    }
+    
+    # Remove backup_duplicates directory
+    if (Test-Path ".\frontend\backup_duplicates") {
+        Remove-Item -Path ".\frontend\backup_duplicates" -Recurse -Force
+    }
+}
 
-Write-Host "`nConsolidation complete. Backup is available in: $backupDir" -ForegroundColor Green
-Write-Host "Please verify the project structure and test the application." -ForegroundColor Yellow
+# 6. Consolidate shared directories
+Write-Log "Consolidating shared directories..."
+if ((Test-Path ".\shared") -and (Test-Path ".\packages\shared")) {
+    # Config
+    if (Test-Path ".\shared\config") {
+        Merge-Directory -Source ".\shared\config" -Destination ".\packages\shared\config" -Label "shared config"
+    }
+    
+    # Services
+    if (Test-Path ".\shared\services") {
+        Merge-Directory -Source ".\shared\services" -Destination ".\packages\shared\services" -Label "shared services"
+    }
+    
+    # Types
+    if (Test-Path ".\shared\types") {
+        Merge-Directory -Source ".\shared\types" -Destination ".\packages\shared\types" -Label "shared types"
+    }
+    
+    # Utils
+    if (Test-Path ".\shared\utils") {
+        Merge-Directory -Source ".\shared\utils" -Destination ".\packages\shared\utils" -Label "shared utils"
+    }
+    
+    # Create symbolic link for backward compatibility
+    if (Test-Path ".\shared") {
+        Remove-Item -Path ".\shared" -Recurse -Force
+    }
+    cmd /c mklink /D ".\shared" ".\packages\shared"
+}
+
+# 7. Fix import paths in test files
+Write-Log "Fixing import paths in test files..."
+$testFiles = Get-ChildItem -Path ".\tests" -Recurse -Include "*.ts", "*.tsx", "*.js", "*.jsx"
+
+foreach ($file in $testFiles) {
+    $content = Get-Content -Path $file.FullName -Raw
+    $modified = $false
+    
+    # Update database imports
+    if ($content -match "../../database/db" -or $content -match "../database/db") {
+        $content = $content -replace "../../database/db", "../../packages/database/db"
+        $content = $content -replace "../database/db", "../packages/database/db"
+        $modified = $true
+    }
+    
+    # Update schema imports
+    if ($content -match "../../database/schema" -or $content -match "../database/schema") {
+        $content = $content -replace "../../database/schema", "../../packages/database/schema"
+        $content = $content -replace "../database/schema", "../packages/database/schema"
+        $modified = $true
+    }
+    
+    # Update API gateway imports
+    if ($content -match "../../api/gateway") {
+        $content = $content -replace "../../api/gateway", "../../backend/api-gateway/gateway"
+        $modified = $true
+    }
+    
+    # Update auth guard imports
+    if ($content -match "../../apps/api/src/auth/auth.guard") {
+        $content = $content -replace "../../apps/api/src/auth/auth.guard", "../../backend/api-gateway/src/auth/auth.guard"
+        $modified = $true
+    }
+    
+    # Update middleware imports
+    if ($content -match "../../middleware/auth") {
+        $content = $content -replace "../../middleware/auth", "../../backend/middleware/auth"
+        $modified = $true
+    }
+    
+    # Update project routes imports
+    if ($content -match "../../services/projects/project.routes") {
+        $content = $content -replace "../../services/projects/project.routes", "../../backend/services/projects/project.routes"
+        $modified = $true
+    }
+    
+    if ($modified) {
+        Write-Log "Updated import paths in: $($file.FullName)"
+        Set-Content -Path $file.FullName -Value $content
+    }
+}
+
+Write-Log "Directory consolidation completed successfully!"
+Write-Log "Backup of original directories is available at: $backupDir"

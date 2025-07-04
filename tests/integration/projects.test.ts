@@ -7,8 +7,8 @@
 import request from 'supertest';
 import express from 'express';
 import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from '@jest/globals';
-import projectRoutes from '../../services/projects/project.routes';
-import { projectService } from '../../services/projects/project.service';
+import projectRoutes from '../../backend/services/projects/project.routes';
+import { projectService } from '../../backend/services/projects/project.service';
 import { testDb } from '../setup/test-db';
 
 // Authentication middleware mock
@@ -281,3 +281,4 @@ describe('Project API Integration Tests', () => {
     });
   });
 });
+
