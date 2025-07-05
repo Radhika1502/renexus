@@ -1,5 +1,6 @@
 import { createClient } from 'redis';
-import { logger } from "../../shared/utils/logger";
+import { logger } from "../utils/logger";
+import jwt from 'jsonwebtoken';
 
 interface RefreshToken {
   userId: string;

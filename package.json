@@ -6,12 +6,21 @@
                        "packages/shared/*"
                    ],
     "name":  "renexus",
+    "version": "1.0.0",
+    "packageManager": "npm@10.0.0",
     "scripts":  {
                     "clean":  "turbo run clean",
                     "build":  "turbo run build",
                     "dev":  "turbo run dev",
                     "lint":  "turbo run lint",
+                    "test":  "turbo run test",
                     "test:e2e": "cypress run",
                     "coverage": "node scripts/coverage.js"
-                }
+                },
+    "devDependencies": {
+        "turbo": "^2.5.4"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
 }

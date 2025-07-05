@@ -1,14 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { logger } from "../../shared/utils/logger";
+import { logger } from "../utils/logger";
 
-// Extend Express Request type to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: any;
-    }
-  }
+interface ExtendedUser {
+  id: string;
+  email: string;
+  tenantId?: string;
+  role?: string;
+  tenantRole?: string;
+}
+
+interface JwtPayload {
+  id: string;
+  email: string;
+  tenantId?: string;
+  role?: string;
+  tenantRole?: string;
+  [key: string]: any;
 }
 
 /**
@@ -42,9 +50,23 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
         return res.status(401).json({ error: 'Invalid token' });
       }
       
-      // Add user info to request
-      req.user = decoded;
-      next();
+      // Type guard and assign user info to request
+      if (decoded && typeof decoded === 'object' && 'id' in decoded && 'email' in decoded) {
+        const payload = decoded as JwtPayload;
+        const user: ExtendedUser = {
+          id: payload.id,
+          email: payload.email,
+          tenantId: payload.tenantId,
+          role: payload.role || payload.tenantRole || 'user',
+          tenantRole: payload.tenantRole || payload.role || 'user'
+        };
+        
+        // Use type assertion to assign to req.user
+        (req as any).user = user;
+        next();
+      } else {
+        return res.status(401).json({ error: 'Invalid token payload' });
+      }
     });
   } catch (error) {
     logger.error('Auth middleware error', { error });
@@ -56,7 +78,8 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
  * Check if user has admin role
  */
 export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (req.user && req.user.role === 'admin') {
+  const user = (req as any).user as ExtendedUser;
+  if (user && (user.role === 'admin' || user.tenantRole === 'admin')) {
     next();
   } else {
     res.status(403).json({ error: 'Access denied: Admin privileges required' });
@@ -68,7 +91,9 @@ export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
  */
 export const hasRole = (roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (req.user && roles.includes(req.user.role)) {
+    const user = (req as any).user as ExtendedUser;
+    const userRole = user?.role || user?.tenantRole;
+    if (user && userRole && roles.includes(userRole)) {
       next();
     } else {
       res.status(403).json({ error: 'Access denied: Insufficient privileges' });

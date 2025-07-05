@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '@renexus/ui-components';
 import { ProjectSummary } from '../types';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { CalendarIcon, AlertCircleIcon } from 'lucide-react';
 
 interface ProjectProgressCardProps {
@@ -74,7 +74,7 @@ export const ProjectProgressCard: React.FC<ProjectProgressCardProps> = ({
             >
               <div className="flex justify-between items-start mb-2">
                 <Link 
-                  to={`/projects/${project.id}`} 
+                  href={`/projects/${project.id}`} 
                   className="text-lg font-medium text-gray-900 dark:text-white hover:underline"
                 >
                   {project.name}

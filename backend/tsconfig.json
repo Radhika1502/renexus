@@ -1,43 +1,64 @@
 ﻿{
     "compilerOptions":  {
-                            "target":  "es5",
+                            "target":  "ES2020",
                             "lib":  [
-                                        "dom",
-                                        "dom.iterable",
-                                        "esnext"
+                                        "ES2020"
                                     ],
+                            "module":  "commonjs",
+                            "moduleResolution":  "node",
                             "allowJs":  true,
                             "skipLibCheck":  true,
                             "esModuleInterop":  true,
                             "allowSyntheticDefaultImports":  true,
                             "strict":  true,
                             "forceConsistentCasingInFileNames":  true,
-                            "module":  "esnext",
-                            "moduleResolution":  "node",
                             "resolveJsonModule":  true,
                             "isolatedModules":  true,
                             "noEmit":  true,
-                            "jsx":  "react-jsx",
+                            "experimentalDecorators":  true,
+                            "emitDecoratorMetadata":  true,
+                            "baseUrl":  ".",
                             "paths":  {
                                           "@config/*":  [
-                                                            "../packages/shared/config/*"
+                                                            "./config/*"
                                                         ],
                                           "@types/*":  [
-                                                           "../packages/shared/types/*"
+                                                           "./types/*"
                                                        ],
                                           "@utils/*":  [
-                                                           "../packages/shared/utils/*"
+                                                           "./utils/*"
                                                        ],
-                                          "@packages/shared/*":  [
-                                                            "../packages/shared/*"
+                                          "@services/*":  [
+                                                            "./services/*"
+                                                        ],
+                                          "@middleware/*":  [
+                                                            "./middleware/*"
+                                                        ],
+                                          "@controllers/*":  [
+                                                            "./controllers/*"
                                                         ]
                                       }
                         },
     "include":  [
-                    "packages/**/*"
+                    "**/*.ts",
+                    "**/*.js",
+                    "api-gateway/src/**/*",
+                    "services/**/*",
+                    "types/**/*",
+                    "utils/**/*",
+                    "middleware/**/*",
+                    "controllers/**/*",
+                    "notification-service/src/**/*",
+                    "auth-service/**/*",
+                    "task-service/**/*"
                 ],
     "exclude":  [
-                    "node_modules"
+                    "node_modules",
+                    "**/node_modules",
+                    "dist",
+                    "**/dist",
+                    "build",
+                    "**/build"
                 ]
 }
 

@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://postgres:root@localhost:5432/renexus"
 }
 
 model User {
@@ -93,12 +93,14 @@ model TaskTemplate {
   category       String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-  fields         String    // Using String instead of Json for SQLite compatibility
+  fields         String    // JSON string for PostgreSQL compatibility
 }
 
 model Project {
   id          String   @id @default(uuid())
   name        String
   description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   tasks       Task[]
 }

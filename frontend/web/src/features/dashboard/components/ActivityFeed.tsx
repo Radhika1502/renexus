@@ -1,36 +1,29 @@
 import React from 'react';
-import { Card } from '@renexus/ui-components';
+import { Card } from './ui/Card';
 import { ActivityFeed as ActivityFeedType } from '../types';
-import { useActivityFeed } from '../hooks/useDashboard';
-import { 
-  MessageSquareIcon, 
-  FileTextIcon, 
-  FolderIcon, 
-  UsersIcon,
-  CalendarIcon
-} from 'lucide-react';
+import { useFetchApi } from '../../../hooks/useApi';
 
 interface ActivityFeedProps {
   limit?: number;
 }
 
 export const ActivityFeed: React.FC<ActivityFeedProps> = ({ limit = 10 }) => {
-  const { data: activities, isLoading, error } = useActivityFeed(limit);
+  const { data: activities, isLoading, error } = useFetchApi(`/dashboard/activity?limit=${limit}`, []);
 
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'TASK':
-        return <FileTextIcon className="h-5 w-5 text-blue-500" />;
+        return <span className="h-5 w-5 text-blue-500">📋</span>;
       case 'PROJECT':
-        return <FolderIcon className="h-5 w-5 text-green-500" />;
+        return <span className="h-5 w-5 text-green-500">📁</span>;
       case 'SPRINT':
-        return <CalendarIcon className="h-5 w-5 text-purple-500" />;
+        return <span className="h-5 w-5 text-purple-500">📅</span>;
       case 'TEAM':
-        return <UsersIcon className="h-5 w-5 text-yellow-500" />;
+        return <span className="h-5 w-5 text-yellow-500">👥</span>;
       case 'COMMENT':
-        return <MessageSquareIcon className="h-5 w-5 text-indigo-500" />;
+        return <span className="h-5 w-5 text-indigo-500">💬</span>;
       default:
-        return <FileTextIcon className="h-5 w-5 text-gray-500" />;
+        return <span className="h-5 w-5 text-gray-500">📋</span>;
     }
   };
 
@@ -78,7 +71,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ limit = 10 }) => {
     return (
       <Card className="p-6">
         <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-        <p className="text-red-500">Error loading activity feed.</p>
+        <p className="text-red-500">Error loading activity feed: {error}</p>
       </Card>
     );
   }
@@ -86,9 +79,9 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ limit = 10 }) => {
   return (
     <Card className="p-6">
       <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-      {activities && activities.length > 0 ? (
+      {activities && Array.isArray(activities) && activities.length > 0 ? (
         <div className="space-y-4">
-          {activities.map((activity) => (
+          {activities.map((activity: any) => (
             <div key={activity.id} className="flex">
               {activity.userAvatar ? (
                 <img 

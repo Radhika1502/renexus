@@ -3,7 +3,9 @@ import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import { AuthService } from '../services/auth.service';
 import { UserService } from '../services/user.service';
-import { logger } from "../../shared/utils/logger";
+import { logger } from "../utils/logger";
+import { db } from '../config/database';
+import { users } from '../models/schema';
 
 export class AuthController {
   private authService: AuthService;
@@ -65,7 +67,7 @@ export class AuthController {
    * Login user
    */
   public login = (req: Request, res: Response, next: NextFunction): void => {
-    passport.authenticate('local', { session: false }, (err, user, info) => {
+    passport.authenticate('local', { session: false }, (err: any, user: any, info: any) => {
       if (err) {
         return next(err);
       }
@@ -115,7 +117,7 @@ export class AuthController {
       // Verify refresh token
       const result = await this.authService.verifyRefreshToken(refreshToken);
       
-      if (!result.valid) {
+      if (!result.valid || !result.userId) {
         const error = {
           status: 401,
           code: 'INVALID_REFRESH_TOKEN',
@@ -243,7 +245,7 @@ export class AuthController {
       // Verify reset token
       const result = await this.authService.verifyPasswordResetToken(token);
       
-      if (!result.valid) {
+      if (!result.valid || !result.userId) {
         const error = {
           status: 400,
           code: 'INVALID_RESET_TOKEN',

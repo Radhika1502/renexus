@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { logger } from "../utils/logger";
 import postgres from 'postgres';
-import { logger } from "../../shared/utils/logger";
 
 // Database connection string
 const connectionString = process.env.DATABASE_URL || 'postgres://postgres:root@localhost:5432/renexus';

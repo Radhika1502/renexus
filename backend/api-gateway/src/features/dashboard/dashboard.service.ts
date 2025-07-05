@@ -417,7 +417,7 @@ export class DashboardService {
       averageCompletionTime: Math.round(averageCompletionTime / 3600), // Convert to hours
       overdueTasks,
       riskLevel,
-      startDate: project.createdAt.toISOString(),
+      startDate: (project as any).createdAt?.toISOString() || new Date().toISOString(),
       estimatedEndDate: project.description // Placeholder for actual end date
     };
   }
@@ -575,8 +575,8 @@ export class DashboardService {
     });
 
     return risks.sort((a, b) => {
-      const severityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
-      return severityOrder[b.severity] - severityOrder[a.severity];
+      const severityOrder: { [key: string]: number } = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+      return severityOrder[b.severity as string] - severityOrder[a.severity as string];
     });
   }
 
