@@ -1,162 +1,261 @@
-<<<<<<< HEAD
-# Renexus
+# Renexus - Task Management System
 
-Renexus is a unified project and task management platform that combines the UI components from Renexus_Replit with the feature sets from project-bolt. The platform features AI-powered workflow automation, task analytics, and team performance metrics to optimize project management.
+A comprehensive task management system with real-time collaboration features.
 
-## Monorepo Structure
+## Features
 
-The project has been restructured as a monorepo to improve code organization and maintainability. The new structure is as follows:
+- Task Management
+  - Create, update, and delete tasks
+  - Assign tasks to team members
+  - Set priorities and deadlines
+  - Track progress and time spent
+  - Add dependencies and subtasks
 
-```
-renexus/
-├── apps/                  # Application code
-│   ├── backend/           # Backend services
-│   │   ├── api/           # Main API service
-│   │   ├── auth/          # Authentication service
-│   │   ├── notifications/ # Notification service
-│   │   └── tasks/         # Task management service
-│   └── frontend/          # Frontend applications
-│       └── web/           # Web application
-├── packages/              # Shared packages
-│   ├── database/          # Database models and migrations
-│   ├── shared/            # Shared utilities and types
-│   │   ├── api-client/    # API client for frontend
-│   │   ├── config/        # Shared configuration
-│   │   ├── types/         # Shared TypeScript types
-│   │   └── utils/         # Shared utility functions
-│   └── ui/                # Shared UI components
-├── tools/                 # Development and build tools
-├── docs/                  # Documentation
-└── .github/               # GitHub workflows and templates
-```
+- Project Management
+  - Create and manage projects
+  - Add team members with different roles
+  - Track project progress and budget
+  - View project statistics and reports
+  - Manage project templates
 
-This structure helps consolidate duplicate directories and establishes a clear separation between backend microservices, frontend code, and shared packages.
+- Real-time Collaboration
+  - Real-time task updates
+  - Collaborative task editing
+  - User presence indicators
+  - In-app notifications
+  - Real-time chat (coming soon)
 
-## Backend Implementation Status
+- Security
+  - Role-based access control
+  - Data encryption
+  - Input validation and sanitization
+  - Rate limiting
+  - CSRF protection
 
-**Phase 1: 85% Complete**
+## Tech Stack
 
-✅ **Completed Features**:
-- Authentication and user management services
-- Project management service with CRUD operations and member management
-- Task management service with assignment and tracking capabilities
-- Project and task template functionality
-- Database migration scripts
-- API routing with proper middleware integration
-- Error handling and logging infrastructure
-- Rate limiting for API protection
-- Comprehensive test suite for services and API endpoints
+- Frontend
+  - React with TypeScript
+  - Material-UI for components
+  - React Query for data fetching
+  - WebSocket for real-time features
+  - Jest and Testing Library for testing
 
-⏳ **In Progress**:
-- Offline synchronization support for task management
-- Directory restructuring for monorepo architecture
-- Fixing remaining TypeScript type definition issues
-- Integration with frontend components
-- End-to-end testing
-
-## Project Structure
-
-```
-renexus/
-├── apps/
-│   ├── web-client/       # Main web application
-│   ├── mobile-app/       # Mobile application
-│   └── admin-portal/     # Admin dashboard
-├── packages/
-│   ├── core/             # Core business logic
-│   ├── ui-components/    # Shared UI component library
-│   ├── api-types/        # Shared API types and interfaces
-│   └── utils/            # Shared utilities
-├── services/
-│   ├── api-gateway/      # API Gateway service
-│   ├── auth-service/     # Authentication service
-│   ├── project-service/  # Project management service
-│   ├── task-service/     # Task management service
-│   ├── ai-service/       # AI capabilities service
-│   ├── notification-service/ # Notification service
-│   └── analytics-service/    # Analytics service
-├── infrastructure/       # Infrastructure as code
-├── docs/                 # Documentation
-├── tests/                # End-to-end and integration tests
-└── tools/                # Development tools
-```
+- Backend
+  - Node.js with TypeScript
+  - PostgreSQL for database
+  - Redis for caching
+  - WebSocket for real-time features
+  - Jest for testing
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
-- npm (v10 or higher)
+- Node.js 18 or higher
+- PostgreSQL 14 or higher
+- Redis 6 or higher
 
 ### Installation
 
-1. Clone the repository
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/renexus.git
+   cd renexus
+   ```
+
 2. Install dependencies:
+   ```bash
+   # Install frontend dependencies
+   cd frontend/web
+   npm install
 
-```bash
-npm install
-```
+   # Install backend dependencies
+   cd ../../backend
+   npm install
+   ```
 
-3. Start the development server:
+3. Set up environment variables:
+   ```bash
+   # Frontend
+   cp frontend/web/.env.example frontend/web/.env
+   # Edit frontend/web/.env with your settings
 
-```bash
-npm run dev
-```
+   # Backend
+   cp backend/.env.example backend/.env
+   # Edit backend/.env with your settings
+   ```
 
-## Key Features
+4. Set up the database:
+   ```bash
+   cd backend
+   npm run db:migrate
+   npm run db:seed
+   ```
 
-### AI-Powered Workflow Automation
+5. Start the development servers:
+   ```bash
+   # Start backend server
+   cd backend
+   npm run dev
 
-- **Intelligent Task Assignment**: AI suggests the best team member for tasks based on expertise and workload
-- **Task Prioritization**: Identifies stalled tasks and suggests prioritization changes
-- **Status Update Automation**: Recommends status changes when subtasks are completed
+   # Start frontend server
+   cd frontend/web
+   npm run dev
+   ```
 
-### Advanced Analytics
-
-- **Task Performance Metrics**: Compare estimated vs. actual time spent on tasks
-- **Team Workload Analysis**: Visualize workload distribution across team members
-- **Completion Trends**: Track task completion patterns over time
-
-### Real-time Collaboration
-
-- **Live Updates**: See changes in real-time as team members update tasks
-- **Smart Notifications**: Get notified about relevant changes and suggestions
-- **Team Insights**: Understand team performance and identify improvement areas
-
-## Documentation
-
-For detailed documentation on the AI features, see [AI_FEATURES.md](./docs/AI_FEATURES.md).
-
-## API Reference
-
-```bash
-npm run dev
-```
+The application will be available at:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:4000
+- WebSocket: ws://localhost:4000/ws
 
 ## Development
 
-This project uses Turborepo for monorepo management. To run commands across all packages:
+### Project Structure
 
-- `npm run dev` - Start development servers
-- `npm run build` - Build all packages
-- `npm run test` - Run tests
-- `npm run lint` - Run linting
+```
+renexus/
+├── frontend/
+│   └── web/
+│       ├── public/
+│       └── src/
+│           ├── api/        # API integration
+│           ├── components/ # React components
+│           ├── contexts/   # React contexts
+│           ├── hooks/      # Custom hooks
+│           ├── pages/      # Page components
+│           ├── services/   # Business logic
+│           ├── styles/     # Global styles
+│           ├── test/       # Test utilities
+│           ├── types/      # TypeScript types
+│           └── utils/      # Utility functions
+├── backend/
+│   ├── src/
+│   │   ├── api/           # API routes
+│   │   ├── config/        # Configuration
+│   │   ├── database/      # Database setup
+│   │   ├── middleware/    # Express middleware
+│   │   ├── models/        # Database models
+│   │   ├── services/      # Business logic
+│   │   ├── types/         # TypeScript types
+│   │   ├── utils/         # Utility functions
+│   │   └── websocket/     # WebSocket handlers
+│   └── test/              # Test files
+└── shared/                # Shared code
+    ├── constants/         # Constants
+    └── types/            # Shared types
+```
 
-## Architecture
+### Code Style
 
-Renexus follows a modular architecture with:
+We use ESLint and Prettier for code formatting. Run the following commands to check and fix code style:
 
-- React 18 for frontend components
-- Radix UI and Tailwind CSS for styling
-- React Query for data fetching
-- Express.js for backend services
-- Drizzle ORM with Neon database
-- Passport.js for authentication
-- Anthropic and OpenAI for AI features
+```bash
+# Check code style
+npm run lint
+
+# Fix code style
+npm run lint:fix
+```
+
+### Testing
+
+We use Jest and Testing Library for testing. Run the following commands to run tests:
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+### Building
+
+To build the application for production:
+
+```bash
+# Build frontend
+cd frontend/web
+npm run build
+
+# Build backend
+cd backend
+npm run build
+```
+
+## Deployment
+
+### Prerequisites
+
+- Node.js 18 or higher
+- PostgreSQL 14 or higher
+- Redis 6 or higher
+- NGINX or similar web server
+
+### Steps
+
+1. Build the application as described above
+
+2. Set up environment variables for production
+
+3. Set up NGINX:
+   ```nginx
+   # Frontend
+   server {
+     listen 80;
+     server_name your-domain.com;
+     root /path/to/frontend/dist;
+     
+     location / {
+       try_files $uri $uri/ /index.html;
+     }
+     
+     location /api {
+       proxy_pass http://localhost:4000;
+       proxy_http_version 1.1;
+       proxy_set_header Upgrade $http_upgrade;
+       proxy_set_header Connection 'upgrade';
+       proxy_set_header Host $host;
+       proxy_cache_bypass $http_upgrade;
+     }
+     
+     location /ws {
+       proxy_pass http://localhost:4000;
+       proxy_http_version 1.1;
+       proxy_set_header Upgrade $http_upgrade;
+       proxy_set_header Connection 'upgrade';
+       proxy_set_header Host $host;
+       proxy_cache_bypass $http_upgrade;
+     }
+   }
+   ```
+
+4. Start the application:
+   ```bash
+   # Start backend
+   cd backend
+   npm run start:prod
+
+   # Serve frontend with NGINX
+   sudo service nginx restart
+   ```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a pull request
 
 ## License
 
-This project is private and proprietary.
-=======
-# renexus
->>>>>>> 1830ddc90b2a6154db892630a9d8cd1bf36f2259
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For support, email support@renexus.com or join our Slack channel.

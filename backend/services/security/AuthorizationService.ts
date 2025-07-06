@@ -1,18 +1,260 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../../database/db';
-import { roles, permissions, rolePermissions, resourcePermissions, users } from '../../database/schema';
+import { users, userRoles, tenantUsers, permissions, rolePermissions, resourcePermissions } from '../../database/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 
+interface Permission {
+  resource: string;
+  action: 'create' | 'read' | 'update' | 'delete' | 'manage';
+}
+
+interface Role {
+  id: string;
+  name: string;
+  permissions: Permission[];
+}
+
+interface RolePermission {
+  permission: {
+    resource: string;
+    action: string;
+  };
+}
+
 /**
- * Enhanced Authorization Service for Phase 4 Security Implementation
- * Implements role-based access control, resource-level permissions,
- * permission inheritance, and audit logging for access events
+ * Authorization Service for handling role-based access control and tenant permissions
  */
 export class AuthorizationService {
   /**
+   * Check if user has required permission for a resource
+   */
+  public async hasPermission(userId: string, resource: string, action: string): Promise<boolean> {
+    try {
+      // Get user with roles
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+        with: {
+          roles: {
+            with: {
+              permissions: true
+            }
+          }
+        }
+      });
+
+      if (!user) {
+        return false;
+      }
+
+      // Check if user has required permission through any of their roles
+      for (const role of user.roles) {
+        const hasPermission = role.permissions.some(
+          (permission: Permission) => permission.resource === resource && permission.action === action
+        );
+        if (hasPermission) {
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Permission check error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if user has access to a tenant
+   */
+  public async hasTenantAccess(userId: string, tenantId: string): Promise<boolean> {
+    try {
+      const tenantUser = await db.query.tenantUsers.findFirst({
+        where: and(
+          eq(tenantUsers.userId, userId),
+          eq(tenantUsers.tenantId, tenantId)
+        )
+      });
+
+      return !!tenantUser;
+    } catch (error) {
+      console.error('Tenant access check error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get user's role in a tenant
+   */
+  public async getTenantRole(userId: string, tenantId: string): Promise<string | null> {
+    try {
+      const tenantUser = await db.query.tenantUsers.findFirst({
+        where: and(
+          eq(tenantUsers.userId, userId),
+          eq(tenantUsers.tenantId, tenantId)
+        )
+      });
+
+      return tenantUser?.role || null;
+    } catch (error) {
+      console.error('Get tenant role error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Assign role to user
+   */
+  public async assignRole(userId: string, roleId: string): Promise<boolean> {
+    try {
+      await db.insert(userRoles).values({
+        userId,
+        roleId,
+        assignedAt: new Date()
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Role assignment error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Remove role from user
+   */
+  public async removeRole(userId: string, roleId: string): Promise<boolean> {
+    try {
+      await db.delete(userRoles)
+        .where(and(
+          eq(userRoles.userId, userId),
+          eq(userRoles.roleId, roleId)
+        ));
+
+      return true;
+    } catch (error) {
+      console.error('Role removal error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Add user to tenant with role
+   */
+  public async addUserToTenant(userId: string, tenantId: string, role: string): Promise<boolean> {
+    try {
+      await db.insert(tenantUsers).values({
+        userId,
+        tenantId,
+        role,
+        joinedAt: new Date()
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Add user to tenant error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Remove user from tenant
+   */
+  public async removeUserFromTenant(userId: string, tenantId: string): Promise<boolean> {
+    try {
+      await db.delete(tenantUsers)
+        .where(and(
+          eq(tenantUsers.userId, userId),
+          eq(tenantUsers.tenantId, tenantId)
+        ));
+
+      return true;
+    } catch (error) {
+      console.error('Remove user from tenant error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Update user's role in tenant
+   */
+  public async updateTenantRole(userId: string, tenantId: string, newRole: string): Promise<boolean> {
+    try {
+      await db.update(tenantUsers)
+        .set({ role: newRole })
+        .where(and(
+          eq(tenantUsers.userId, userId),
+          eq(tenantUsers.tenantId, tenantId)
+        ));
+
+      return true;
+    } catch (error) {
+      console.error('Update tenant role error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get all permissions for a role
+   */
+  public async getRolePermissions(roleId: string): Promise<Permission[]> {
+    try {
+      const result = await db.query.rolePermissions.findMany({
+        where: eq(rolePermissions.roleId, roleId),
+        with: {
+          permission: true
+        }
+      });
+
+      return result.map((rp: RolePermission) => ({
+        resource: rp.permission.resource,
+        action: rp.permission.action as Permission['action']
+      }));
+    } catch (error) {
+      console.error('Get role permissions error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Add permission to role
+   */
+  public async addPermissionToRole(roleId: string, permissionId: string): Promise<boolean> {
+    try {
+      await db.insert(rolePermissions).values({
+        roleId,
+        permissionId,
+        grantedAt: new Date()
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Add permission to role error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Remove permission from role
+   */
+  public async removePermissionFromRole(roleId: string, permissionId: string): Promise<boolean> {
+    try {
+      await db.delete(rolePermissions)
+        .where(and(
+          eq(rolePermissions.roleId, roleId),
+          eq(rolePermissions.permissionId, permissionId)
+        ));
+
+      return true;
+    } catch (error) {
+      console.error('Remove permission from role error:', error);
+      return false;
+    }
+  }
+
+  /**
    * Check if a user has permission to perform an action on a resource
    */
-  async hasPermission(
+  async hasPermissionForResource(
     userId: string,
     permissionName: string,
     resourceType?: string,

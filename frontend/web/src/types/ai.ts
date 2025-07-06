@@ -8,11 +8,14 @@ export interface TaskSuggestion {
   id: string;
   title: string;
   description: string;
-  confidence: number;
-  projectId: string;
-  suggestedDueDate?: Date;
-  type: string;
   priority: 'low' | 'medium' | 'high';
+  estimatedDuration: number; // in minutes
+  suggestedDueDate: string;
+  confidence: number; // 0-1
+  tags: string[];
+  relatedTasks?: string[]; // IDs of related tasks
+  aiReasoning: string; // Explanation of why this task was suggested
+  createdAt: string;
 }
 
 // Workflow Automation Types
@@ -323,4 +326,34 @@ export interface DashboardWidget {
     width: number;
     height: number;
   };
+}
+
+export interface AIAnalysis {
+  taskId: string;
+  insights: {
+    timeEstimateAccuracy: number; // 0-1
+    complexityScore: number; // 0-1
+    riskLevel: 'low' | 'medium' | 'high';
+    bottlenecks: string[];
+    recommendations: string[];
+  };
+  performanceMetrics: {
+    completionRate: number; // 0-1
+    onTimeDelivery: number; // 0-1
+    qualityScore: number; // 0-1
+  };
+  createdAt: string;
+}
+
+export interface AIRecommendation {
+  id: string;
+  type: 'workflow' | 'resource' | 'scheduling' | 'risk';
+  title: string;
+  description: string;
+  impact: 'low' | 'medium' | 'high';
+  effort: 'low' | 'medium' | 'high';
+  benefits: string[];
+  risks: string[];
+  implementationSteps: string[];
+  createdAt: string;
 }

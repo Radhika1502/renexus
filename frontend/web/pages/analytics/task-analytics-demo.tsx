@@ -1,6 +1,6 @@
 import React from 'react';
 import { Container, Typography, Box } from '@mui/material';
-import { TaskAnalyticsDashboard } from '../../components/analytics/TaskAnalytics';
+import { TaskAnalyticsDashboard } from '../../src/components/analytics/TaskAnalytics';
 
 /**
  * Task Analytics Demo Page
@@ -9,23 +9,18 @@ import { TaskAnalyticsDashboard } from '../../components/analytics/TaskAnalytics
  */
 const TaskAnalyticsDemo: React.FC = () => {
   // Mock user data - in a real app, this would come from authentication
-  const userId = 'john-doe';
-  const userName = 'John Doe';
+  const userId = "user123";
+  const userName = "John Doe";
 
   return (
-    <Box sx={{ py: 4 }}>
-      <Container maxWidth="lg" sx={{ mb: 4 }}>
+    <Container maxWidth="lg">
+      <Box sx={{ my: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Task Analytics Demo
+          Task Analytics Dashboard
         </Typography>
-        <Typography variant="body1" paragraph>
-          This page demonstrates the Task Analytics Dashboard component with mock data.
-          In a real application, this would be integrated with your task management system.
-        </Typography>
-      </Container>
-      
-      <TaskAnalyticsDashboard userId={userId} userName={userName} />
-    </Box>
+        <TaskAnalyticsDashboard userId={userId} userName={userName} />
+      </Box>
+    </Container>
   );
 };
 

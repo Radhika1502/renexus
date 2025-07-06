@@ -1,143 +1,101 @@
 import React, { useState } from 'react';
-import { TaskSuggestion  } from "../../../shared/types/ai";
-import './SuggestionCard.css';
+import { TaskSuggestion } from "../../types/ai";
+import { Card, CardContent, Typography, Button, Chip, Box } from '@mui/material';
 
 interface SuggestionCardProps {
   suggestion: TaskSuggestion;
-  onAccept: () => void;
-  onReject: () => void;
-  onFeedback: (isHelpful: boolean, feedback?: string) => void;
+  onAccept: (suggestion: TaskSuggestion) => void;
+  onReject: (suggestion: TaskSuggestion) => void;
 }
 
 /**
  * Card component for displaying individual task suggestions with accept/reject actions
  */
-const SuggestionCard: React.FC<SuggestionCardProps> = ({
+export const SuggestionCard: React.FC<SuggestionCardProps> = ({
   suggestion,
   onAccept,
   onReject,
-  onFeedback
 }) => {
-  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
-  const [feedbackText, setFeedbackText] = useState('');
-  const [isHelpful, setIsHelpful] = useState<boolean | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   const handleAccept = () => {
-    onAccept();
+    onAccept(suggestion);
   };
 
   const handleReject = () => {
-    onReject();
+    onReject(suggestion);
   };
-
-  const toggleFeedbackForm = () => {
-    setShowFeedbackForm(!showFeedbackForm);
-  };
-
-  const submitFeedback = () => {
-    if (isHelpful !== null) {
-      onFeedback(isHelpful, feedbackText);
-      setShowFeedbackForm(false);
-      setFeedbackText('');
-      setIsHelpful(null);
-    }
-  };
-
-  // Format the due date if it exists
-  const formattedDueDate = suggestion.suggestedDueDate 
-    ? new Date(suggestion.suggestedDueDate).toLocaleDateString() 
-    : 'Not specified';
-
-  // Determine priority class for styling
-  const priorityClass = 
-    suggestion.priority === 'High' ? 'priority-high' :
-    suggestion.priority === 'Medium' ? 'priority-medium' : 'priority-low';
-
-  // Determine confidence class for styling
-  const confidenceClass = 
-    suggestion.confidence >= 0.8 ? 'confidence-high' :
-    suggestion.confidence >= 0.5 ? 'confidence-medium' : 'confidence-low';
-
-  // Format confidence as percentage
-  const confidencePercentage = Math.round(suggestion.confidence * 100);
 
   return (
-    <div className="suggestion-card">
-      <div className="suggestion-card-header">
-        <h4 className="suggestion-card-title">{suggestion.title}</h4>
-        <span className={`suggestion-card-priority ${priorityClass}`}>
-          {suggestion.priority}
-        </span>
-      </div>
-      
-      <p className="suggestion-card-description">{suggestion.description}</p>
-      
-      <div className="suggestion-card-metadata">
-        <div className="metadata-item">
-          <span className="metadata-label">Type:</span>
-          <span className="metadata-value">{suggestion.type}</span>
-        </div>
-        <div className="metadata-item">
-          <span className="metadata-label">Due:</span>
-          <span className="metadata-value">{formattedDueDate}</span>
-        </div>
-        <div className="metadata-item">
-          <span className="metadata-label">Confidence:</span>
-          <div className={`confidence-bar ${confidenceClass}`}>
-            <div className="confidence-fill" style={{ width: `${confidencePercentage}%` }}></div>
-            <span className="confidence-text">{confidencePercentage}%</span>
-          </div>
-        </div>
-      </div>
-      
-      <div className="suggestion-card-actions">
-        <button className="action-button accept-button" onClick={handleAccept}>
-          Accept
-        </button>
-        <button className="action-button reject-button" onClick={handleReject}>
-          Reject
-        </button>
-        <button className="action-button feedback-button" onClick={toggleFeedbackForm}>
-          {showFeedbackForm ? 'Cancel' : 'Feedback'}
-        </button>
-      </div>
-      
-      {showFeedbackForm && (
-        <div className="feedback-form">
-          <div className="feedback-options">
-            <button 
-              className={`feedback-option ${isHelpful === true ? 'selected' : ''}`}
-              onClick={() => setIsHelpful(true)}
-            >
-              Helpful
-            </button>
-            <button 
-              className={`feedback-option ${isHelpful === false ? 'selected' : ''}`}
-              onClick={() => setIsHelpful(false)}
-            >
-              Not Helpful
-            </button>
-          </div>
-          
-          <textarea
-            className="feedback-textarea"
-            placeholder="Additional feedback (optional)"
-            value={feedbackText}
-            onChange={(e) => setFeedbackText(e.target.value)}
-          ></textarea>
-          
-          <button 
-            className="submit-feedback-button"
-            disabled={isHelpful === null}
-            onClick={submitFeedback}
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          {suggestion.title}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          {expanded ? suggestion.description : `${suggestion.description.slice(0, 100)}...`}
+          <Button size="small" onClick={() => setExpanded(!expanded)}>
+            {expanded ? 'Show Less' : 'Show More'}
+          </Button>
+        </Typography>
+        <Box sx={{ mt: 2, mb: 2 }}>
+          <Chip
+            label={`Priority: ${suggestion.priority}`}
+            color={
+              suggestion.priority === 'high'
+                ? 'error'
+                : suggestion.priority === 'medium'
+                ? 'warning'
+                : 'success'
+            }
+            size="small"
+            sx={{ mr: 1 }}
+          />
+          <Chip
+            label={`${suggestion.estimatedDuration} mins`}
+            size="small"
+            sx={{ mr: 1 }}
+          />
+          <Chip
+            label={`Confidence: ${Math.round(suggestion.confidence * 100)}%`}
+            size="small"
+          />
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+          {suggestion.tags.map((tag) => (
+            <Chip key={tag} label={tag} size="small" variant="outlined" />
+          ))}
+        </Box>
+        {expanded && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              AI Reasoning:
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {suggestion.aiReasoning}
+            </Typography>
+          </Box>
+        )}
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+          <Button
+            variant="outlined"
+            color="error"
+            size="small"
+            onClick={handleReject}
           >
-            Submit Feedback
-          </button>
-        </div>
-      )}
-    </div>
+            Reject
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            onClick={handleAccept}
+          >
+            Accept
+          </Button>
+        </Box>
+      </CardContent>
+    </Card>
   );
 };
-
-export default SuggestionCard;
 

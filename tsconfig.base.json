@@ -1,8 +1,19 @@
 {
     "compilerOptions":  {
+                            "target":  "ESNext",
+                            "module":  "ESNext",
+                            "lib":  ["DOM", "DOM.Iterable", "ESNext"],
+                            "allowJs":  true,
+                            "skipLibCheck":  true,
+                            "esModuleInterop":  true,
+                            "allowSyntheticDefaultImports":  true,
                             "strict":  true,
-                            "declaration":  true,
-                            "module":  "commonjs",
+                            "forceConsistentCasingInFileNames":  true,
+                            "moduleResolution":  "node",
+                            "resolveJsonModule":  true,
+                            "isolatedModules":  true,
+                            "noEmit":  true,
+                            "jsx":  "react-jsx",
                             "paths":  {
                                           "@packages/shared/api-client":  [
                                                                               "packages/shared/api-client/src"
@@ -29,9 +40,8 @@
                                                                "packages/ui/src"
                                                            ]
                                       },
-                            "forceConsistentCasingInFileNames":  true,
-                            "skipLibCheck":  true,
-                            "esModuleInterop":  true,
-                            "target":  "es2018"
-                        }
+                            "declaration":  true
+                        },
+    "include":  ["src"],
+    "exclude":  ["node_modules", "dist"]
 }

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import SuggestionNotification from './SuggestionNotification';
 import SuggestionPanel from './SuggestionPanel';
-import { TaskSuggestion  } from "../../../shared/types/ai";
+import { TaskSuggestion } from '../../types/ai';
 import './SuggestionContainer.css';
+import { SuggestionCard } from './SuggestionCard';
+import { Box, Typography, Paper } from '@mui/material';
 
 interface SuggestionContainerProps {
   userId: string;
@@ -52,7 +54,7 @@ const SuggestionContainer: React.FC<SuggestionContainerProps> = ({
       
       // Update active notifications with high confidence suggestions
       const highConfidenceSuggestions = data
-        .filter(suggestion => suggestion.confidence >= 0.7)
+        .filter((suggestion: TaskSuggestion) => suggestion.confidence >= 0.7)
         .slice(0, maxNotifications);
       
       setActiveNotifications(highConfidenceSuggestions);
@@ -144,9 +146,9 @@ const SuggestionContainer: React.FC<SuggestionContainerProps> = ({
           description: suggestion.description,
           priority: suggestion.priority.toLowerCase(),
           dueDate: suggestion.suggestedDueDate,
-          type: suggestion.type,
           suggestedById: 'ai-assistant',
-          originalSuggestionId: suggestion.id
+          originalSuggestionId: suggestion.id,
+          tags: suggestion.tags
         })
       });
       
@@ -172,51 +174,27 @@ const SuggestionContainer: React.FC<SuggestionContainerProps> = ({
   };
 
   return (
-    <div className="suggestion-container">
-      {/* Notification area */}
-      <div className="suggestion-notifications-container">
-        {activeNotifications.map(suggestion => (
-          <SuggestionNotification
-            key={suggestion.id}
-            suggestion={suggestion}
-            onAccept={() => handleAcceptSuggestion(suggestion)}
-            onReject={() => handleRejectSuggestion(suggestion)}
-            onDismiss={() => handleDismissNotification(suggestion)}
-            onFeedback={(isHelpful, feedback) => submitFeedback(suggestion.id, isHelpful, feedback)}
-          />
-        ))}
-      </div>
-      
-      {/* Suggestion panel for all suggestions */}
-      {showPanel && (
-        <SuggestionPanel
-          suggestions={suggestions}
-          onAccept={handleAcceptSuggestion}
-          onReject={handleRejectSuggestion}
-          onFeedback={submitFeedback}
-        />
-      )}
-      
-      {/* Floating action button to toggle panel */}
-      <button 
-        className={`suggestion-fab ${showPanel ? 'active' : ''}`}
-        onClick={togglePanel}
-        aria-label={showPanel ? 'Hide suggestions' : 'Show suggestions'}
-      >
-        <i className={`icon-${showPanel ? 'close' : 'lightbulb'}`}></i>
-        {!showPanel && suggestions.length > 0 && (
-          <span className="suggestion-count">{suggestions.length}</span>
+    <Paper sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom>
+        AI Task Suggestions
+      </Typography>
+      <Box sx={{ mt: 2 }}>
+        {suggestions.length === 0 ? (
+          <Typography variant="body1" color="text.secondary">
+            No suggestions available at the moment.
+          </Typography>
+        ) : (
+          suggestions.map((suggestion) => (
+            <SuggestionCard
+              key={suggestion.id}
+              suggestion={suggestion}
+              onAccept={handleAcceptSuggestion}
+              onReject={handleRejectSuggestion}
+            />
+          ))
         )}
-      </button>
-      
-      {/* Error message if applicable */}
-      {error && (
-        <div className="suggestion-error">
-          <p>{error}</p>
-          <button onClick={() => setError(null)}>Dismiss</button>
-        </div>
-      )}
-    </div>
+      </Box>
+    </Paper>
   );
 };
 
