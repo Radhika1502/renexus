@@ -1,10 +1,11 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Box, Typography, Button } from '@mui/material';
-import { ErrorOutline } from '@mui/icons-material';
+import { RefreshCw } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface State {
@@ -15,7 +16,7 @@ interface State {
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
-    error: null,
+    error: null
   };
 
   public static getDerivedStateFromError(error: Error): State {
@@ -24,6 +25,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
   }
 
   private handleRetry = () => {
@@ -42,19 +46,20 @@ export class ErrorBoundary extends Component<Props, State> {
           flexDirection="column"
           alignItems="center"
           justifyContent="center"
-          p={4}
+          minHeight="200px"
+          p={3}
           textAlign="center"
         >
-          <ErrorOutline sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
-          <Typography variant="h5" color="error" gutterBottom>
+          <Typography variant="h6" color="error" gutterBottom>
             Something went wrong
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography variant="body2" color="textSecondary" paragraph>
             {this.state.error?.message || 'An unexpected error occurred'}
           </Typography>
           <Button
             variant="contained"
             color="primary"
+            startIcon={<RefreshCw />}
             onClick={this.handleRetry}
           >
             Try Again

@@ -1,6 +1,9 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import * as schema from './schema/unified_schema';
+import { tasks } from './schema/tasks';
+import { projects } from './schema/projects';
+import { users } from './schema/users';
+import { sessions } from './schema/sessions';
 import * as dotenv from 'dotenv';
 
 // Load environment variables
@@ -10,14 +13,29 @@ dotenv.config();
 const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/renexus';
 
 // Create connection pool
-export const pool = new Pool({
+const pool = new Pool({
   connectionString,
-  max: 10, // Maximum number of clients in the pool
+  max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // How long a client is allowed to remain idle before being closed
+  connectionTimeoutMillis: 2000,
 });
 
 // Initialize Drizzle with the connection and schema
-export const db = drizzle(pool, { schema });
+export const db = drizzle(pool, {
+  schema: {
+    tasks,
+    projects,
+    users,
+    sessions
+  },
+});
+
+// Export types
+export type Database = typeof db;
+export type Task = typeof tasks.$inferSelect;
+export type Project = typeof projects.$inferSelect;
+export type User = typeof users.$inferSelect;
+export type Session = typeof sessions.$inferSelect;
 
 // Handle pool errors
 pool.on('error', (err) => {

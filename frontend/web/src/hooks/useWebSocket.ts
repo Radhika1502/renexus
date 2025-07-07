@@ -1,63 +1,126 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { WebSocketClient, createWebSocketClient } from '../services/websocket';
-import { useGlobalState } from './useGlobalState';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQueryClient } from 'react-query';
 
-export const useWebSocket = () => {
-  const wsRef = useRef<WebSocketClient | null>(null);
-  const { isAuthenticated } = useGlobalState();
+interface WebSocketConfig {
+  url: string;
+  reconnectInterval?: number;
+  maxReconnectAttempts?: number;
+  onMessage?: (data: any) => void;
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+  onError?: (error: Event) => void;
+}
 
-  useEffect(() => {
-    if (!wsRef.current) {
-      wsRef.current = createWebSocketClient();
-    }
+interface WebSocketMessage {
+  type: string;
+  payload: any;
+}
 
-    if (isAuthenticated) {
-      wsRef.current.connect(localStorage.getItem('auth_token') || '');
-    }
-
-    return () => {
-      wsRef.current?.disconnect();
-    };
-  }, [isAuthenticated]);
-
-  const subscribe = useCallback((type: string, handler: (data: any) => void) => {
-    return wsRef.current?.subscribe(type, handler);
-  }, []);
-
-  const send = useCallback((type: string, data: any) => {
-    wsRef.current?.send(type, data);
-  }, []);
-
-  return {
-    subscribe,
-    send,
-  };
-};
-
-export const useRealTimeUpdates = () => {
-  const { subscribe } = useWebSocket();
+export const useWebSocket = ({
+  url,
+  reconnectInterval = 3000,
+  maxReconnectAttempts = 5,
+  onMessage,
+  onConnect,
+  onDisconnect,
+  onError
+}: WebSocketConfig) => {
+  const [isConnected, setIsConnected] = useState(false);
+  const [error, setError] = useState<Event | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const queryClient = useQueryClient();
 
+  // Initialize WebSocket connection
+  const connect = useCallback(() => {
+    try {
+      if (wsRef.current?.readyState === WebSocket.OPEN) return;
+
+      wsRef.current = new WebSocket(url);
+
+      wsRef.current.onopen = () => {
+        setIsConnected(true);
+        setError(null);
+        reconnectAttemptsRef.current = 0;
+        onConnect?.();
+      };
+
+      wsRef.current.onclose = () => {
+        setIsConnected(false);
+        onDisconnect?.();
+
+        // Attempt reconnection
+        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectAttemptsRef.current++;
+            connect();
+          }, reconnectInterval);
+        }
+      };
+
+      wsRef.current.onerror = (event) => {
+        setError(event);
+        onError?.(event);
+      };
+
+      wsRef.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data) as WebSocketMessage;
+          
+          // Handle different message types
+          switch (data.type) {
+            case 'ENTITY_UPDATED':
+              // Invalidate related queries
+              queryClient.invalidateQueries(data.payload.entityType);
+              break;
+
+            case 'NOTIFICATION':
+              // Handle notifications
+              break;
+
+            case 'PRESENCE_UPDATE':
+              // Handle presence updates
+              break;
+          }
+
+          onMessage?.(data);
+        } catch (err) {
+          console.error('Failed to parse WebSocket message:', err);
+        }
+      };
+    } catch (err) {
+      console.error('Failed to establish WebSocket connection:', err);
+      setError(err as Event);
+    }
+  }, [url, maxReconnectAttempts, reconnectInterval, onConnect, onDisconnect, onError, onMessage, queryClient]);
+
+  // Send message through WebSocket
+  const sendMessage = useCallback((message: WebSocketMessage) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(message));
+    } else {
+      console.warn('WebSocket is not connected');
+    }
+  }, []);
+
+  // Connect on mount, cleanup on unmount
   useEffect(() => {
-    const unsubscribeTask = subscribe('task:update', (data) => {
-      queryClient.invalidateQueries(['tasks']);
-      queryClient.invalidateQueries(['task', data.id]);
-    });
-
-    const unsubscribeProject = subscribe('project:update', (data) => {
-      queryClient.invalidateQueries(['projects']);
-      queryClient.invalidateQueries(['project', data.id]);
-    });
-
-    const unsubscribeNotification = subscribe('notification:new', (data) => {
-      queryClient.invalidateQueries(['notifications']);
-    });
+    connect();
 
     return () => {
-      unsubscribeTask?.();
-      unsubscribeProject?.();
-      unsubscribeNotification?.();
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
     };
-  }, [subscribe, queryClient]);
+  }, [connect]);
+
+  return {
+    isConnected,
+    error,
+    sendMessage
+  };
 };

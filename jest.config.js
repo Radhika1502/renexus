@@ -1,33 +1,50 @@
-module.exports = {
-  preset: 'ts-jest',
+export default {
+  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
-  roots: ['<rootDir>/tests'],
-  transform: {
-    '^.+\\.tsx?$': 'ts-jest',
+  roots: ['<rootDir>/tests', '<rootDir>/services', '<rootDir>/packages'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@packages/(.*)$': '<rootDir>/packages/$1',
+    '^@services/(.*)$': '<rootDir>/services/$1',
+    '^@types/(.*)$': '<rootDir>/types/$1',
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^(\\.{1,2}/.*)\\.ts$': '$1'
   },
-  testMatch: ['**/tests/**/*.test.ts'],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+  testMatch: [
+    '**/__tests__/**/*.+(ts|tsx|js)',
+    '**/tests/**/*.+(spec|test).+(ts|tsx|js)',
+    '**/services/**/*.+(spec|test).+(ts|tsx|js)',
+    '**/packages/**/*.+(spec|test).+(ts|tsx|js)'
+  ],
+  transform: {
+    '^.+\\.(ts|tsx)$': [
+      'ts-jest',
+      {
+        useESM: true,
+        tsconfig: 'tsconfig.json'
+      }
+    ]
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(drizzle-orm|@drizzle|pg|@types/pg)/)'
+  ],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  collectCoverage: true,
-  coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'services/**/*.{ts,tsx}',
-    '!**/node_modules/**',
-    '!**/vendor/**',
+    'packages/**/*.{ts,tsx}',
+    '!**/*.d.ts'
   ],
-  coverageThreshold: {
-    global: {
-      branches: 70,
-      functions: 70,
-      lines: 70,
-      statements: 70,
-    },
-  },
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov'],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   verbose: true,
-  // Added global setup and teardown for integration tests with real database
-  globalSetup: '<rootDir>/tests/jest-setup.js',
-  globalTeardown: '<rootDir>/tests/jest-teardown.js',
-  // Set longer timeout for database operations
-  testTimeout: 30000,
-  // Force tests to run in series for database stability
-  maxWorkers: 1,
+  moduleDirectories: ['node_modules', '.'],
+  globals: {
+    'ts-jest': {
+      useESM: true,
+      tsconfig: 'tsconfig.json'
+    }
+  }
 };

@@ -1,10 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import OfflineManager from '../services/offline/OfflineManager';
+import { useQueryClient } from 'react-query';
 
 interface UseOfflineSyncOptions {
   entityType?: string;
   autoSync?: boolean;
   apiClient?: any;
+  onSync?: () => void;
+  onOffline?: () => void;
+  onOnline?: () => void;
 }
 
 interface UseOfflineSyncResult {
@@ -23,6 +27,17 @@ interface UseOfflineSyncResult {
   addChange: (entityType: string, operation: 'create' | 'update' | 'delete', data: any) => void;
   syncChanges: () => Promise<boolean>;
   clearCache: () => void;
+  pendingOperations: PendingOperation[];
+  addPendingOperation: (operation: Omit<PendingOperation, 'id' | 'timestamp'>) => void;
+  syncPendingOperations: () => Promise<void>;
+}
+
+interface PendingOperation {
+  id: string;
+  operation: 'create' | 'update' | 'delete';
+  entityType: string;
+  data: any;
+  timestamp: number;
 }
 
 /**
@@ -34,15 +49,20 @@ interface UseOfflineSyncResult {
 export function useOfflineSync({
   entityType,
   autoSync = true,
-  apiClient
+  apiClient,
+  onSync,
+  onOffline,
+  onOnline
 }: UseOfflineSyncOptions = {}): UseOfflineSyncResult {
   const offlineManager = OfflineManager.getInstance();
+  const queryClient = useQueryClient();
   
   const [isOnline, setIsOnline] = useState<boolean>(offlineManager.isDeviceOnline());
   const [hasPendingChanges, setHasPendingChanges] = useState<boolean>(offlineManager.hasPendingChanges());
   const [pendingChangesCount, setPendingChangesCount] = useState<number>(offlineManager.getPendingChangesCount());
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastSyncResult, setLastSyncResult] = useState<UseOfflineSyncResult['lastSyncResult']>(null);
+  const [pendingOperations, setPendingOperations] = useState<PendingOperation[]>([]);
   
   // Initialize the offline manager with the API client if provided
   useEffect(() => {
@@ -133,6 +153,105 @@ export function useOfflineSync({
       offlineManager.removeListener('syncComplete', handleSyncComplete);
     };
   }, []);
+
+  // Handle online/offline status changes
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      onOnline?.();
+      syncPendingOperations();
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      onOffline?.();
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [onOnline, onOffline]);
+
+  // Add operation to pending queue
+  const addPendingOperation = useCallback((operation: Omit<PendingOperation, 'id' | 'timestamp'>) => {
+    const newOperation: PendingOperation = {
+      ...operation,
+      id: crypto.randomUUID(),
+      timestamp: Date.now()
+    };
+
+    setPendingOperations(prev => [...prev, newOperation]);
+    
+    // Store in IndexedDB for persistence
+    localStorage.setItem('pendingOperations', JSON.stringify([...pendingOperations, newOperation]));
+  }, [pendingOperations]);
+
+  // Sync pending operations when online
+  const syncPendingOperations = useCallback(async () => {
+    if (!isOnline || isSyncing || pendingOperations.length === 0) return;
+
+    setIsSyncing(true);
+
+    try {
+      // Process operations in order
+      for (const operation of pendingOperations) {
+        try {
+          switch (operation.operation) {
+            case 'create':
+              await fetch(`/api/${operation.entityType}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(operation.data)
+              });
+              break;
+
+            case 'update':
+              await fetch(`/api/${operation.entityType}/${operation.data.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(operation.data)
+              });
+              break;
+
+            case 'delete':
+              await fetch(`/api/${operation.entityType}/${operation.data.id}`, {
+                method: 'DELETE'
+              });
+              break;
+          }
+
+          // Remove synced operation
+          setPendingOperations(prev => prev.filter(op => op.id !== operation.id));
+          localStorage.setItem('pendingOperations', JSON.stringify(
+            pendingOperations.filter(op => op.id !== operation.id)
+          ));
+
+          // Invalidate related queries
+          queryClient.invalidateQueries(operation.entityType);
+
+        } catch (error) {
+          console.error(`Failed to sync operation ${operation.id}:`, error);
+          // Keep operation in queue for retry
+        }
+      }
+
+      onSync?.();
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isOnline, isSyncing, pendingOperations, onSync, queryClient]);
+
+  // Load pending operations from storage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('pendingOperations');
+    if (stored) {
+      setPendingOperations(JSON.parse(stored));
+    }
+  }, []);
   
   return {
     isOnline,
@@ -144,7 +263,10 @@ export function useOfflineSync({
     getData,
     addChange,
     syncChanges,
-    clearCache
+    clearCache,
+    pendingOperations,
+    addPendingOperation,
+    syncPendingOperations
   };
 }
 

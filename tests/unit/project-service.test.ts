@@ -11,10 +11,13 @@ const uuidv4 = () => 'test-uuid-' + Math.random().toString(36).substring(2, 15);
 type MockDB = any;
 
 // Mock imports
-import { db } from '../../packag../packages/database/db';
+import { db } from '../../packages/database/db';
+import { projects } from '../../packages/database/schema/projects';
+import { ProjectService } from '../../services/projects/project.service';
+import { eq } from 'drizzle-orm';
 
 // Mock database with explicit 'any' type to avoid TypeScript errors
-jest.mock('../../packag../packages/database/db', () => {
+jest.mock('../../packages/database/db', () => {
   // Create a mock object with any type to avoid TypeScript errors
   const mockDb = {
     query: {
@@ -44,277 +47,71 @@ jest.mock('../../packag../packages/database/db', () => {
   return { db: mockDb };
 });
 
-describe('Project Service Tests', () => {
-  // Sample data
-  const testUser = {
-    id: uuidv4(),
-    email: 'test@example.com',
-    role: 'user',
-    tenantId: 'tenant-123'
-  };
-
-  const testProject = {
-    id: uuidv4(),
+describe('Project Service', () => {
+  let projectService: ProjectService;
+  const mockProject = {
+    id: '123',
     name: 'Test Project',
-    description: 'A test project',
-    tenantId: 'tenant-123',
+    description: 'Test Description',
     status: 'active',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
-
-  const testTemplate = {
-    id: uuidv4(),
-    name: 'Test Template',
-    description: 'A test project template',
-    structure: JSON.stringify({
-      tasks: [
-        { name: 'Task 1', description: 'Description 1' },
-        { name: 'Task 2', description: 'Description 2' }
-      ]
-    }),
+    ownerId: '456',
     createdAt: new Date(),
     updatedAt: new Date()
   };
 
   beforeEach(() => {
+    projectService = new ProjectService(db);
     jest.clearAllMocks();
-    
-    // Mock database query responses
-    (db.query.projects.findMany as jest.Mock).mockResolvedValue([testProject]);
-    (db.query.projects.findFirst as jest.Mock).mockResolvedValue(testProject);
-    (db.query.projects.insert as jest.Mock).mockResolvedValue({ insertId: testProject.id });
-    (db.query.projects.update as jest.Mock).mockResolvedValue({ affectedRows: 1 });
-    (db.query.projects.delete as jest.Mock).mockResolvedValue({ affectedRows: 1 });
-    
-    // Use correct table name for templates
-    (db.query.project_templates.findMany as jest.Mock).mockResolvedValue([testTemplate]);
-    (db.query.project_templates.findFirst as jest.Mock).mockResolvedValue(testTemplate);
-    (db.query.project_templates.insert as jest.Mock).mockResolvedValue({ insertId: testTemplate.id });
-    
-    // Use correct table name for user projects
-    (db.query.projects_users.findMany as jest.Mock).mockResolvedValue([{ userId: testUser.id, projectId: testProject.id, role: 'owner' }]);
-    (db.query.projects_users.insert as jest.Mock).mockResolvedValue({ insertId: uuidv4() });
-    (db.query.projects_users.delete as jest.Mock).mockResolvedValue({ affectedRows: 1 });
-    
-    (db.transaction as jest.Mock).mockImplementation(async (callback) => {
-      return await callback(db);
-    });
   });
 
-  describe('Project CRUD Operations', () => {
-    it('should get all projects for a tenant', async () => {
-      // Mock implementation of getProjects
-      const getProjects = async (tenantId: string) => {
-        return await db.query.projects.findMany({
-          where: { tenantId }
-        });
-      };
-
-      const projects = await getProjects('tenant-123');
-      
-      expect(db.query.projects.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: expect.anything()
-      }));
-      expect(projects).toEqual([testProject]);
-    });
-
-    it('should get a project by ID', async () => {
-      // Mock implementation of getProjectById
-      const getProjectById = async (id: string, tenantId: string) => {
-        return await db.query.projects.findFirst({
-          where: { id, tenantId }
-        });
-      };
-
-      const project = await getProjectById(testProject.id, 'tenant-123');
-      
-      expect(db.query.projects.findFirst).toHaveBeenCalledWith(expect.objectContaining({
-        where: expect.anything()
-      }));
-      expect(project).toEqual(testProject);
-    });
-
+  describe('createProject', () => {
     it('should create a new project', async () => {
-      // Mock implementation of createProject
-      const createProject = async (projectData: any, userId: string) => {
-        const newProject = {
-          ...projectData,
-          id: uuidv4(),
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        
-        return await db.transaction(async (tx) => {
-          await tx.query.projects.insert({ data: newProject });
-          await tx.query.projects_users.insert({
-            data: {
-              userId,
-              projectId: newProject.id,
-              role: 'owner'
-            }
-          });
-          
-          return newProject;
-        });
-      };
+      const mockValues = jest.fn().mockResolvedValue([mockProject]);
+      const mockInsert = jest.fn().mockReturnValue({ values: mockValues });
+      (db.insert as jest.Mock).mockImplementation(mockInsert);
 
-      const projectData = {
-        name: 'New Project',
-        description: 'A new project',
-        tenantId: 'tenant-123',
-        status: 'active'
-      };
-      
-      const newProject = await createProject(projectData, testUser.id);
-      
-      expect(db.transaction).toHaveBeenCalled();
-      expect(db.query.projects.insert).toHaveBeenCalled();
-      expect(db.query.projects_users.insert).toHaveBeenCalled();
-      expect(newProject).toHaveProperty('id');
-      expect(newProject).toHaveProperty('name', 'New Project');
-    });
+      const result = await projectService.createProject({
+        name: 'Test Project',
+        description: 'Test Description',
+        ownerId: '456'
+      });
 
-    it('should update an existing project', async () => {
-      // Mock implementation of updateProject
-      const updateProject = async (id: string, tenantId: string, updateData: any) => {
-        const existingProject = await db.query.projects.findFirst({
-          where: { id, tenantId }
-        });
-        
-        if (!existingProject) {
-          throw new Error('Project not found');
-        }
-        
-        await db.query.projects.update({
-          where: { id },
-          data: {
-            ...updateData,
-            updatedAt: new Date()
-          }
-        });
-        
-        return {
-          ...existingProject,
-          ...updateData,
-          updatedAt: new Date()
-        };
-      };
-
-      const updateData = {
-        name: 'Updated Project',
-        description: 'Updated description'
-      };
-      
-      const updatedProject = await updateProject(testProject.id, 'tenant-123', updateData);
-      
-      expect(db.query.projects.findFirst).toHaveBeenCalled();
-      expect(db.query.projects.update).toHaveBeenCalled();
-      expect(updatedProject).toHaveProperty('name', 'Updated Project');
-      expect(updatedProject).toHaveProperty('description', 'Updated description');
-    });
-
-    it('should delete a project', async () => {
-      // Mock implementation of deleteProject
-      const deleteProject = async (id: string, tenantId: string) => {
-        const existingProject = await db.query.projects.findFirst({
-          where: { id, tenantId }
-        });
-        
-        if (!existingProject) {
-          throw new Error('Project not found');
-        }
-        
-        return await db.transaction(async (tx) => {
-          await tx.query.projects_users.delete({
-            where: { projectId: id }
-          });
-          
-          await tx.query.projects.delete({
-            where: { id }
-          });
-          
-          return true;
-        });
-      };
-
-      const result = await deleteProject(testProject.id, 'tenant-123');
-      
-      expect(db.query.projects.findFirst).toHaveBeenCalled();
-      expect(db.transaction).toHaveBeenCalled();
-      expect(db.query.projects_users.delete).toHaveBeenCalled();
-      expect(db.query.projects.delete).toHaveBeenCalled();
-      expect(result).toBe(true);
+      expect(result).toEqual(mockProject);
     });
   });
 
-  describe('Project Template Operations', () => {
-    it('should get all project templates', async () => {
-      // Mock implementation of getProjectTemplates
-      const getProjectTemplates = async () => {
-        return await db.query.project_templates.findMany();
-      };
+  describe('getProject', () => {
+    it('should return a project by id', async () => {
+      const mockWhere = jest.fn().mockResolvedValue([mockProject]);
+      const mockFrom = jest.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = jest.fn().mockReturnValue({ from: mockFrom });
+      (db.select as jest.Mock).mockImplementation(mockSelect);
 
-      const templates = await getProjectTemplates();
-      
-      expect(db.query.project_templates.findMany).toHaveBeenCalled();
-      expect(templates).toEqual([testTemplate]);
+      const result = await projectService.getProject('123');
+      expect(result).toEqual(mockProject);
     });
+  });
 
-    it('should create project from template', async () => {
-      // Mock implementation of createProjectFromTemplate
-      const createProjectFromTemplate = async (templateId: string, projectData: any, userId: string) => {
-        const template = await db.query.project_templates.findFirst({
-          where: (fields: any) => ({ id: templateId })
-        });
-        
-        if (!template) {
-          throw new Error('Template not found');
-        }
-        
-        const templateStructure = JSON.parse(template.structure);
-        
-        const newProject = {
-          ...projectData,
-          id: uuidv4(),
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        
-        return await db.transaction(async (tx) => {
-          await tx.query.projects.insert({ data: newProject });
-          await tx.query.projects_users.insert({
-            data: {
-              userId,
-              projectId: newProject.id,
-              role: 'owner'
-            }
-          });
-          
-          // Create tasks from template
-          for (const task of templateStructure.tasks) {
-            // In a real implementation, we would create tasks here
-          }
-          
-          return newProject;
-        });
-      };
+  describe('updateProject', () => {
+    it('should update a project', async () => {
+      const mockWhere = jest.fn().mockResolvedValue([mockProject]);
+      const mockSet = jest.fn().mockReturnValue({ where: mockWhere });
+      const mockUpdate = jest.fn().mockReturnValue({ set: mockSet });
+      (db.update as jest.Mock).mockImplementation(mockUpdate);
 
-      const projectData = {
-        name: 'Template-based Project',
-        description: 'A project created from template',
-        tenantId: 'tenant-123',
-        status: 'active'
-      };
-      
-      const newProject = await createProjectFromTemplate(testTemplate.id, projectData, testUser.id);
-      
-      expect(db.query.project_templates.findFirst).toHaveBeenCalled();
-      expect(db.transaction).toHaveBeenCalled();
-      expect(db.query.projects.insert).toHaveBeenCalled();
-      expect(db.query.projects_users.insert).toHaveBeenCalled();
-      expect(newProject).toHaveProperty('id');
-      expect(newProject).toHaveProperty('name', 'Template-based Project');
+      const result = await projectService.updateProject('123', { name: 'Updated Project' });
+      expect(result).toEqual(mockProject);
+    });
+  });
+
+  describe('deleteProject', () => {
+    it('should delete a project', async () => {
+      const mockWhere = jest.fn().mockResolvedValue([mockProject]);
+      const mockDelete = jest.fn().mockReturnValue({ where: mockWhere });
+      (db.delete as jest.Mock).mockImplementation(mockDelete);
+
+      await projectService.deleteProject('123');
+      expect(mockWhere).toHaveBeenCalled();
     });
   });
 });

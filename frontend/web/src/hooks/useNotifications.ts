@@ -15,7 +15,7 @@ interface Notification {
 interface NotificationResponse {
   notifications: Notification[];
   total: number;
-  page: number;
+    page: number;
   pageSize: number;
   hasMore: boolean;
 }

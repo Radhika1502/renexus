@@ -1,193 +1,189 @@
 // @ts-nocheck
 
+import { db } from '../../packages/database/db';
+import { users } from '../../packages/database/schema/users';
+import { MfaService } from '../../services/auth/mfa.service';
+import { eq } from 'drizzle-orm';
+import type { User } from '../../packages/database/types';
+import type { GeneratedSecret } from 'speakeasy';
+
 // Using a mock UUID function since we're just testing
 const uuidv4 = () => 'test-uuid-' + Math.random().toString(36).substring(2, 15);
 
 // Mock dependencies
 jest.mock('speakeasy', () => ({
   generateSecret: jest.fn().mockReturnValue({
-    base32: 'ABCDEFGHIJKLMNOP',
-    otpauth_url: 'otpauth://totp/Renexus:test@example.com?secret=ABCDEFGHIJKLMNOP&issuer=Renexus'
-  }),
+    base32: 'test-secret',
+    otpauth_url: 'otpauth://totp/test@example.com?secret=test-secret'
+  } as GeneratedSecret),
   totp: {
     verify: jest.fn().mockReturnValue(true)
   }
 }));
 
 jest.mock('qrcode', () => ({
-  toDataURL: jest.fn().mockResolvedValue('data:image/png;base64,mockQrCodeData')
+  toDataURL: jest.fn().mockResolvedValue('data:image/png;base64,test')
 }));
 
-// Import dependencies after mocks
-import { db } from '../../packag../packages/database/db';
-import { users } from '../../packag../packages/database/schema';
-
-jest.mock('../../packag../packages/database/db', () => ({
-  db: {
-    query: {
-      users: {
-        findFirst: jest.fn(),
-        findMany: jest.fn()
-      }
-    },
+// Mock database with proper Drizzle types
+jest.mock('../../packages/database/db', () => {
+  const mockDb = {
+    select: jest.fn().mockReturnThis(),
+    from: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    execute: jest.fn(),
     update: jest.fn().mockReturnThis(),
     set: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    execute: jest.fn()
-  }
-}));
+    insert: jest.fn().mockReturnThis(),
+    values: jest.fn().mockReturnThis()
+  };
+  return { db: mockDb };
+});
 
-// Import the MFA service (mock implementation for testing)
-const mfaService = {
-  setupTotpMfa: jest.fn(),
-  verifyTotpMfa: jest.fn(),
-  activateTotpMfa: jest.fn(),
-  setupSmsMfa: jest.fn(),
-  verifySmsMfa: jest.fn(),
-  activateSmsMfa: jest.fn(),
-  generateRecoveryCodes: jest.fn(),
-  verifyRecoveryCode: jest.fn(),
-  disableMfa: jest.fn()
-};
-
-describe('MFA Service Tests', () => {
-  const testUser = {
-    id: uuidv4(),
+describe('MFA Service', () => {
+  let mfaService: MfaService;
+  const mockUser: User = {
+    id: '123',
     email: 'test@example.com',
+    passwordHash: 'hashed_password',
     firstName: 'Test',
-    lastName: 'User'
+    lastName: 'User',
+    role: 'user',
+    isActive: true,
+    mfaEnabled: false,
+    mfaSecret: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lastLoginAt: null
   };
 
   beforeEach(() => {
+    mfaService = new MfaService(db);
     jest.clearAllMocks();
-    
-    // Mock implementation of MFA service methods
-    mfaService.setupTotpMfa.mockResolvedValue({
-      secret: 'ABCDEFGHIJKLMNOP',
-      qrCode: 'data:image/png;base64,mockQrCodeData'
+    (db.execute as jest.Mock).mockReset();
+  });
+
+  describe('setupMfa', () => {
+    it('should setup MFA for a user', async () => {
+      // Mock the user query
+      const mockSelect = jest.fn().mockReturnThis();
+      const mockFrom = jest.fn().mockReturnThis();
+      const mockWhere = jest.fn().mockResolvedValue([mockUser]);
+      
+      (db.select as jest.Mock).mockImplementation(() => ({
+        from: mockFrom,
+        where: mockWhere
+      }));
+      
+      // Mock the update query
+      const mockSet = jest.fn().mockReturnThis();
+      const mockUpdateWhere = jest.fn().mockResolvedValue([{
+        ...mockUser,
+        mfaEnabled: true,
+        mfaSecret: 'test-secret'
+      }]);
+      
+      (db.update as jest.Mock).mockImplementation(() => ({
+        set: mockSet,
+        where: mockUpdateWhere
+      }));
+
+      const result = await mfaService.setupMfa('123');
+      
+      expect(result).toEqual({
+        secret: 'test-secret',
+        qrCode: 'data:image/png;base64,test'
+      });
+
+      expect(mockWhere).toHaveBeenCalledWith(eq(users.id, '123'));
+      expect(mockSet).toHaveBeenCalledWith({
+        mfaEnabled: true,
+        mfaSecret: 'test-secret'
+      });
     });
-    
-    mfaService.verifyTotpMfa.mockImplementation(async (secret, token) => {
-      return token === '123456'; // Simple mock validation
-    });
-    
-    mfaService.activateTotpMfa.mockResolvedValue({
-      success: true,
-      message: 'TOTP MFA activated successfully'
-    });
-    
-    mfaService.setupSmsMfa.mockResolvedValue({
-      success: true,
-      message: 'SMS verification code sent'
-    });
-    
-    mfaService.verifySmsMfa.mockImplementation(async (userId, code) => {
-      return code === '123456'; // Simple mock validation
-    });
-    
-    mfaService.activateSmsMfa.mockResolvedValue({
-      success: true,
-      message: 'SMS MFA activated successfully'
-    });
-    
-    mfaService.generateRecoveryCodes.mockResolvedValue([
-      'ABCDE-12345',
-      'FGHIJ-67890',
-      'KLMNO-13579',
-      'PQRST-24680',
-      'UVWXY-97531'
-    ]);
-    
-    mfaService.verifyRecoveryCode.mockImplementation(async (userId, code) => {
-      return ['ABCDE-12345', 'FGHIJ-67890'].includes(code);
-    });
-    
-    mfaService.disableMfa.mockResolvedValue({
-      success: true,
-      message: 'MFA disabled successfully'
+
+    it('should throw error if user not found', async () => {
+      const mockSelect = jest.fn().mockReturnThis();
+      const mockFrom = jest.fn().mockReturnThis();
+      const mockWhere = jest.fn().mockResolvedValue([]);
+      
+      (db.select as jest.Mock).mockImplementation(() => ({
+        from: mockFrom,
+        where: mockWhere
+      }));
+
+      await expect(mfaService.setupMfa('123')).rejects.toThrow('User not found');
     });
   });
 
-  describe('TOTP MFA Tests', () => {
-    it('should generate TOTP secret and QR code', async () => {
-      const result = await mfaService.setupTotpMfa(testUser.id);
+  describe('verifyMfa', () => {
+    it('should verify MFA token', async () => {
+      const mockSelect = jest.fn().mockReturnThis();
+      const mockFrom = jest.fn().mockReturnThis();
+      const mockWhere = jest.fn().mockResolvedValue([{
+        ...mockUser,
+        mfaEnabled: true,
+        mfaSecret: 'test-secret'
+      }]);
       
-      expect(result).toHaveProperty('secret');
-      expect(result).toHaveProperty('qrCode');
-      expect(result.secret).toBe('ABCDEFGHIJKLMNOP');
-      expect(result.qrCode).toBe('data:image/png;base64,mockQrCodeData');
-      expect(mfaService.setupTotpMfa).toHaveBeenCalledWith(testUser.id);
+      (db.select as jest.Mock).mockImplementation(() => ({
+        from: mockFrom,
+        where: mockWhere
+      }));
+
+      const result = await mfaService.verifyMfa('123', '123456');
+      expect(result).toBe(true);
     });
 
-    it('should verify TOTP token correctly', async () => {
-      const validResult = await mfaService.verifyTotpMfa('ABCDEFGHIJKLMNOP', '123456');
-      const invalidResult = await mfaService.verifyTotpMfa('ABCDEFGHIJKLMNOP', '999999');
+    it('should return false for disabled MFA', async () => {
+      const mockSelect = jest.fn().mockReturnThis();
+      const mockFrom = jest.fn().mockReturnThis();
+      const mockWhere = jest.fn().mockResolvedValue([mockUser]);
       
-      expect(validResult).toBe(true);
-      expect(invalidResult).toBe(false);
+      (db.select as jest.Mock).mockImplementation(() => ({
+        from: mockFrom,
+        where: mockWhere
+      }));
+
+      const result = await mfaService.verifyMfa('123', '123456');
+      expect(result).toBe(false);
     });
 
-    it('should activate TOTP MFA for user', async () => {
-      const result = await mfaService.activateTotpMfa(testUser.id, 'ABCDEFGHIJKLMNOP');
+    it('should throw error if user not found', async () => {
+      const mockSelect = jest.fn().mockReturnThis();
+      const mockFrom = jest.fn().mockReturnThis();
+      const mockWhere = jest.fn().mockResolvedValue([]);
       
-      expect(result.success).toBe(true);
-      expect(result.message).toBe('TOTP MFA activated successfully');
-      expect(mfaService.activateTotpMfa).toHaveBeenCalledWith(testUser.id, 'ABCDEFGHIJKLMNOP');
-    });
-  });
+      (db.select as jest.Mock).mockImplementation(() => ({
+        from: mockFrom,
+        where: mockWhere
+      }));
 
-  describe('SMS MFA Tests', () => {
-    it('should send SMS verification code', async () => {
-      const result = await mfaService.setupSmsMfa(testUser.id, '+1234567890');
-      
-      expect(result.success).toBe(true);
-      expect(result.message).toBe('SMS verification code sent');
-      expect(mfaService.setupSmsMfa).toHaveBeenCalledWith(testUser.id, '+1234567890');
-    });
-
-    it('should verify SMS code correctly', async () => {
-      const validResult = await mfaService.verifySmsMfa(testUser.id, '123456');
-      const invalidResult = await mfaService.verifySmsMfa(testUser.id, '999999');
-      
-      expect(validResult).toBe(true);
-      expect(invalidResult).toBe(false);
-    });
-
-    it('should activate SMS MFA for user', async () => {
-      const result = await mfaService.activateSmsMfa(testUser.id, '+1234567890');
-      
-      expect(result.success).toBe(true);
-      expect(result.message).toBe('SMS MFA activated successfully');
-      expect(mfaService.activateSmsMfa).toHaveBeenCalledWith(testUser.id, '+1234567890');
+      await expect(mfaService.verifyMfa('123', '123456')).rejects.toThrow('User not found');
     });
   });
 
-  describe('Recovery Codes Tests', () => {
-    it('should generate recovery codes', async () => {
-      const codes = await mfaService.generateRecoveryCodes(testUser.id);
+  describe('disableMfa', () => {
+    it('should disable MFA for a user', async () => {
+      const mockSet = jest.fn().mockReturnThis();
+      const mockWhere = jest.fn().mockResolvedValue([{
+        ...mockUser,
+        mfaEnabled: false,
+        mfaSecret: null
+      }]);
       
-      expect(Array.isArray(codes)).toBe(true);
-      expect(codes).toHaveLength(5);
-      expect(codes[0]).toBe('ABCDE-12345');
-      expect(mfaService.generateRecoveryCodes).toHaveBeenCalledWith(testUser.id);
-    });
+      (db.update as jest.Mock).mockImplementation(() => ({
+        set: mockSet,
+        where: mockWhere
+      }));
 
-    it('should verify recovery codes correctly', async () => {
-      const validResult = await mfaService.verifyRecoveryCode(testUser.id, 'ABCDE-12345');
-      const invalidResult = await mfaService.verifyRecoveryCode(testUser.id, 'INVALID-CODE');
-      
-      expect(validResult).toBe(true);
-      expect(invalidResult).toBe(false);
-    });
-  });
+      await mfaService.disableMfa('123');
 
-  describe('MFA Management Tests', () => {
-    it('should disable MFA for user', async () => {
-      const result = await mfaService.disableMfa(testUser.id);
-      
-      expect(result.success).toBe(true);
-      expect(result.message).toBe('MFA disabled successfully');
-      expect(mfaService.disableMfa).toHaveBeenCalledWith(testUser.id);
+      expect(mockSet).toHaveBeenCalledWith({
+        mfaEnabled: false,
+        mfaSecret: null
+      });
+      expect(mockWhere).toHaveBeenCalledWith(eq(users.id, '123'));
     });
   });
 });
