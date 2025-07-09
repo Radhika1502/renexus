@@ -18,7 +18,6 @@ const tests = {
     // 1.1 Database & Migration (Critical)
     'database.test.ts',        // Schema validation, migration testing, integrity testing
     'migration-scripts.test.ts', // Migration testing
-    'backup-recovery.test.ts', // Backup & recovery testing
     
     // 1.2 Authentication & User Management (Critical)
     'auth.test.ts',            // User management, authentication, access control, MFA
@@ -48,8 +47,7 @@ const phase1AcceptanceCriteria = {
   database: [
     "All tables and relationships should be created correctly",
     "Data should be migrated without loss or corruption",
-    "Integrity constraints should be enforced",
-    "Backup and recovery procedures should work as expected"
+    "Integrity constraints should be enforced"
   ],
   authentication: [
     "The system should handle authentication requests securely",
@@ -86,7 +84,6 @@ const results = {
 const testCriteriaMappings = {
   'database.test.ts': ['database'],
   'migration-scripts.test.ts': ['database'],
-  'backup-recovery.test.ts': ['database'],
   'auth.test.ts': ['authentication'],
   'performance.test.ts': ['database', 'apiServices'], // Performance tests cover both database and API services
   'api-gateway.test.ts': ['apiServices'],

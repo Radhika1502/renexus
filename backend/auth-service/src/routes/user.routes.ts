@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Router } from 'express';
 import passport from 'passport';
 import { body, param } from 'express-validator';
 import { UserController } from '../controllers/user.controller';
@@ -6,7 +6,7 @@ import { validateRequest } from '../middleware/validateRequest';
 import { checkRole } from '../middleware/checkRole';
 import { UserRole } from '@renexus/api-types';
 
-const router = express.Router();
+const router: Router = express.Router();
 const userController = new UserController();
 
 /**

@@ -1,59 +1,15 @@
 ﻿{
-    "compilerOptions":  {
-                            "target":  "ES2020",
-                            "module":  "ESNext",
-                            "lib":  [
-                                        "ES2020",
-                                        "DOM",
-                                        "DOM.Iterable"
-                                    ],
-                            "declaration":  true,
-                            "strict":  true,
-                            "noImplicitAny":  true,
-                            "strictNullChecks":  true,
-                            "noUnusedLocals":  true,
-                            "noUnusedParameters":  true,
-                            "moduleResolution":  "node",
-                            "esModuleInterop":  true,
-                            "skipLibCheck":  true,
-                            "forceConsistentCasingInFileNames":  true,
-                            "noEmit":  true,
-                            "resolveJsonModule":  true,
-                            "isolatedModules":  true,
-                            "jsx":  "react-jsx",
-                            "incremental":  true,
-                            "baseUrl":  ".",
-                            "paths":  {
-                                          "@/*":  [
-                                                      "src/*"
-                                                  ],
-                                          "@packages/*":  [
-                                                            "packages/*"
-                                                        ],
-                                          "@services/*":  [
-                                                            "services/*"
-                                                        ],
-                                          "@types/*":  [
-                                                            "types/*"
-                                                        ]
-                                      },
-                            "types":  [
-                                        "node",
-                                        "jest",
-                                        "@testing-library/jest-dom"
-                                    ]
-                        },
-    "include":  [
-                    "src/**/*",
-                    "packages/**/*",
-                    "services/**/*",
-                    "tests/**/*",
-                    "types/**/*"
-                ],
-    "exclude":  [
-                    "node_modules",
-                    "dist",
-                    "coverage"
-                ]
+    "files": [],
+    "references": [
+        { "path": "packages/database" },
+        { "path": "packages/shared" },
+        { "path": "packages/ui" },
+        { "path": "services/auth" },
+        { "path": "services/projects" },
+        { "path": "backend/api-gateway" },
+        { "path": "backend/auth-service" },
+        { "path": "backend/notification-service" },
+        { "path": "backend/task-service" }
+    ]
 }
 

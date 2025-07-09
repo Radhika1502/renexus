@@ -1,6 +1,7 @@
-import { renderHook, act } from '@testing-library/react';
-import { useWebSocket } from '../../../frontend/web/src/hooks/useWebSocket';
+import { describe, expect, jest, it } from '@jest/globals';
+import { renderHook, act } from '@testing-library/react-hooks';
 import WS from 'jest-websocket-mock';
+import { useWebSocket } from '@packages/ui/hooks/useWebSocket';
 
 describe('useWebSocket', () => {
   let server: WS;
@@ -15,89 +16,68 @@ describe('useWebSocket', () => {
   });
 
   it('should connect to WebSocket server', async () => {
-    const onConnect = jest.fn();
-    const { result } = renderHook(() => useWebSocket({
-      url: TEST_URL,
-      onConnect
-    }));
+    const { result } = renderHook(() => useWebSocket(TEST_URL));
 
     await server.connected;
     expect(result.current.isConnected).toBe(true);
-    expect(onConnect).toHaveBeenCalled();
+  });
+
+  it('should send messages', async () => {
+    const { result } = renderHook(() => useWebSocket(TEST_URL));
+
+    await server.connected;
+
+    act(() => {
+      result.current.send('test message');
+    });
+
+    await expect(server).toReceiveMessage('test message');
+  });
+
+  it('should receive messages', async () => {
+    const onMessage = jest.fn();
+    const { result } = renderHook(() => useWebSocket(TEST_URL, { onMessage }));
+
+    await server.connected;
+    server.send('server message');
+
+    expect(onMessage).toHaveBeenCalledWith('server message');
   });
 
   it('should handle connection errors', async () => {
     const onError = jest.fn();
-    const { result } = renderHook(() => useWebSocket({
-      url: 'ws://invalid-url',
-      onError
-    }));
+    renderHook(() => useWebSocket('ws://invalid-url', { onError }));
 
-    expect(result.current.error).toBeTruthy();
+    // Wait for potential error
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     expect(onError).toHaveBeenCalled();
   });
 
-  it('should send and receive messages', async () => {
-    const onMessage = jest.fn();
-    const { result } = renderHook(() => useWebSocket({
-      url: TEST_URL,
-      onMessage
-    }));
-
-    await server.connected;
-
-    const testMessage = { type: 'TEST', payload: { data: 'test' } };
-    
-    act(() => {
-      result.current.sendMessage(testMessage);
-    });
-
-    await expect(server).toReceiveMessage(JSON.stringify(testMessage));
-    
-    server.send(JSON.stringify({ type: 'RESPONSE', payload: { data: 'response' } }));
-    expect(onMessage).toHaveBeenCalledWith({ type: 'RESPONSE', payload: { data: 'response' } });
-  });
-
-  it('should attempt reconnection on disconnect', async () => {
-    const onDisconnect = jest.fn();
-    const onConnect = jest.fn();
-    
-    renderHook(() => useWebSocket({
-      url: TEST_URL,
-      onDisconnect,
-      onConnect,
-      reconnectInterval: 100,
-      maxReconnectAttempts: 1
-    }));
+  it('should handle reconnection', async () => {
+    const { result } = renderHook(() => useWebSocket(TEST_URL, { reconnect: true }));
 
     await server.connected;
     server.close();
-    expect(onDisconnect).toHaveBeenCalled();
 
-    // Wait for reconnect attempt
-    await new Promise(resolve => setTimeout(resolve, 150));
-    expect(onConnect).toHaveBeenCalledTimes(2);
-  });
+    // Wait for reconnection attempt
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-  it('should handle message parsing errors', async () => {
-    const onMessage = jest.fn();
-    renderHook(() => useWebSocket({
-      url: TEST_URL,
-      onMessage
-    }));
-
+    expect(result.current.isConnected).toBe(false);
+    
+    // Create new server to simulate successful reconnection
+    server = new WS(TEST_URL);
     await server.connected;
-    server.send('invalid json');
-    expect(onMessage).not.toHaveBeenCalled();
+
+    expect(result.current.isConnected).toBe(true);
   });
 
   it('should cleanup on unmount', async () => {
-    const { unmount } = renderHook(() => useWebSocket({
-      url: TEST_URL
-    }));
+    const { unmount } = renderHook(() => useWebSocket(TEST_URL));
 
     await server.connected;
     unmount();
+
     expect(server.clients().length).toBe(0);
   });
 }); 

@@ -1,10 +1,10 @@
-import express from 'express';
+import express, { Router, Request, Response } from 'express';
 import { body, param, validationResult } from 'express-validator';
 import { createTemplate, getTemplate, updateTemplate, deleteTemplate, listTemplates } from '../services/template.service';
-import { logger } from "../../shared/utils/logger";
+import { logger } from '../../../shared/utils/logger';
 import { verifyToken } from '../middleware/auth';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 /**
  * @route POST /templates
@@ -15,42 +15,25 @@ router.post(
   '/',
   verifyToken,
   [
-    body('name').notEmpty().withMessage('Template name is required'),
-    body('description').notEmpty().withMessage('Description is required'),
-    body('subject').notEmpty().withMessage('Subject is required'),
-    body('content').notEmpty().withMessage('Content is required'),
-    body('variables').isArray().withMessage('Variables must be an array'),
+    body('name').isString().notEmpty(),
+    body('subject').isString().notEmpty(),
+    body('body').isString().notEmpty(),
   ],
-  async (req, res) => {
+  async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
-      // Check if user is admin
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({
-          error: 'Only administrators can create templates'
-        });
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden' });
       }
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { name, description, subject, content, variables } = req.body;
-
-      const template = await createTemplate({
-        name,
-        description,
-        subject,
-        content,
-        variables
-      });
-
-      res.status(201).json(template);
+      const template = await createTemplate(req.body);
+      return res.status(201).json(template);
     } catch (error) {
       logger.error('Error creating template', { error });
-      res.status(500).json({
-        error: 'Failed to create template'
-      });
+      return res.status(500).json({ error: 'Failed to create template' });
     }
   }
 );
@@ -63,15 +46,13 @@ router.post(
 router.get(
   '/',
   verifyToken,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const templates = await listTemplates();
       res.status(200).json(templates);
     } catch (error) {
-      logger.error('Error getting templates', { error });
-      res.status(500).json({
-        error: 'Failed to get templates'
-      });
+      logger.error('Error listing templates', { error });
+      res.status(500).json({ error: 'Failed to list templates' });
     }
   }
 );
@@ -84,31 +65,23 @@ router.get(
 router.get(
   '/:id',
   verifyToken,
-  [
-    param('id').notEmpty().withMessage('Template ID is required'),
-  ],
-  async (req, res) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
+  [param('id').isString()],
+  async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { id } = req.params;
-      const template = await getTemplate(id);
-
-      if (!template) {
-        return res.status(404).json({
-          error: 'Template not found'
-        });
-      }
-
-      res.status(200).json(template);
+    }
+    
+    try {
+        const template = await getTemplate(req.params.id);
+        if (template) {
+            return res.json(template);
+        } else {
+            return res.status(404).json({ error: 'Template not found' });
+        }
     } catch (error) {
-      logger.error('Error getting template', { error });
-      res.status(500).json({
-        error: 'Failed to get template'
-      });
+        logger.error('Error getting template', { error });
+        return res.status(500).json({ error: 'Failed to get template' });
     }
   }
 );
@@ -122,44 +95,30 @@ router.put(
   '/:id',
   verifyToken,
   [
-    param('id').notEmpty().withMessage('Template ID is required'),
-    body('name').optional(),
-    body('description').optional(),
-    body('subject').optional(),
-    body('content').optional(),
-    body('variables').optional().isArray(),
+    param('id').isString(),
+    body('name').optional().isString(),
+    body('subject').optional().isString(),
+    body('body').optional().isString(),
   ],
-  async (req, res) => {
-    try {
-      // Check if user is admin
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({
-          error: 'Only administrators can update templates'
-        });
-      }
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
+  async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { id } = req.params;
-      const updates = req.body;
-
-      const template = await updateTemplate(id, updates);
-
-      if (!template) {
-        return res.status(404).json({
-          error: 'Template not found'
-        });
-      }
-
-      res.status(200).json(template);
+    }
+    
+    try {
+        if (req.user?.role !== 'admin') {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+        const template = await updateTemplate(req.params.id, req.body);
+        if (template) {
+            return res.json(template);
+        } else {
+            return res.status(404).json({ error: 'Template not found' });
+        }
     } catch (error) {
-      logger.error('Error updating template', { error });
-      res.status(500).json({
-        error: 'Failed to update template'
-      });
+        logger.error('Error updating template', { error });
+        return res.status(500).json({ error: 'Failed to update template' });
     }
   }
 );
@@ -172,43 +131,25 @@ router.put(
 router.delete(
   '/:id',
   verifyToken,
-  [
-    param('id').notEmpty().withMessage('Template ID is required'),
-  ],
-  async (req, res) => {
-    try {
-      // Check if user is admin
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({
-          error: 'Only administrators can delete templates'
-        });
-      }
-
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
+  [param('id').isString()],
+  async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { id } = req.params;
-      const success = await deleteTemplate(id);
-
-      if (!success) {
-        return res.status(404).json({
-          error: 'Template not found'
-        });
-      }
-
-      res.status(200).json({
-        message: 'Template deleted successfully'
-      });
+    }
+    
+    try {
+        if (req.user?.role !== 'admin') {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+        await deleteTemplate(req.params.id);
+        return res.status(204).send();
     } catch (error) {
-      logger.error('Error deleting template', { error });
-      res.status(500).json({
-        error: 'Failed to delete template'
-      });
+        logger.error('Error deleting template', { error });
+        return res.status(500).json({ error: 'Failed to delete template' });
     }
   }
 );
 
-export const templateRoutes = router;
+export const templateRoutes: Router = router;
 

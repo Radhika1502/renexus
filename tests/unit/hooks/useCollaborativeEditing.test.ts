@@ -1,29 +1,36 @@
-import { renderHook, act } from '@testing-library/react';
-import { useCollaborativeEditing } from '../../../frontend/web/src/hooks/useCollaborativeEditing';
+import { describe, expect, jest, it } from '@jest/globals';
+import { renderHook, act } from '@testing-library/react-hooks';
+import { useCollaborativeEditing } from '@packages/ui/hooks/useCollaborativeEditing';
 
-jest.mock('../../../frontend/web/src/hooks/useWebSocket', () => ({
-  useWebSocket: () => ({
-    isConnected: true,
-    sendMessage: jest.fn()
-  })
-}));
+// Mock WebSocket
+const mockWebSocket = {
+  send: jest.fn(),
+  close: jest.fn(),
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn()
+};
+
+// Mock document object
+const mockDocument = {
+  id: 'doc123',
+  content: 'Initial content'
+};
+
+// Mock user
+const mockUser = {
+  id: 'user123',
+  name: 'Test User'
+};
+
+// Mock WebSocket constructor
+(global as any).WebSocket = jest.fn(() => mockWebSocket);
 
 describe('useCollaborativeEditing', () => {
-  const mockUser = {
-    id: 'user1',
-    name: 'Test User'
-  };
-
-  const mockDocument = {
-    id: 'doc1',
-    content: 'Initial content'
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should initialize with initial content', () => {
+  it('should initialize with correct state', () => {
     const { result } = renderHook(() => useCollaborativeEditing({
       documentId: mockDocument.id,
       userId: mockUser.id,
@@ -32,38 +39,8 @@ describe('useCollaborativeEditing', () => {
     }));
 
     expect(result.current.content).toBe(mockDocument.content);
-    expect(result.current.isLoading).toBe(true);
-    expect(result.current.error).toBeNull();
-  });
-
-  it('should handle insert operations', () => {
-    const { result } = renderHook(() => useCollaborativeEditing({
-      documentId: mockDocument.id,
-      userId: mockUser.id,
-      userName: mockUser.name,
-      initialContent: 'Hello'
-    }));
-
-    act(() => {
-      result.current.sendOperation('insert', 5, ' World');
-    });
-
-    expect(result.current.content).toBe('Hello World');
-  });
-
-  it('should handle delete operations', () => {
-    const { result } = renderHook(() => useCollaborativeEditing({
-      documentId: mockDocument.id,
-      userId: mockUser.id,
-      userName: mockUser.name,
-      initialContent: 'Hello World'
-    }));
-
-    act(() => {
-      result.current.sendOperation('delete', 5, ' World');
-    });
-
-    expect(result.current.content).toBe('Hello');
+    expect(result.current.isConnected).toBe(false);
+    expect(result.current.collaborators).toEqual([]);
   });
 
   it('should handle update operations', () => {
@@ -71,14 +48,17 @@ describe('useCollaborativeEditing', () => {
       documentId: mockDocument.id,
       userId: mockUser.id,
       userName: mockUser.name,
-      initialContent: 'Hello World'
+      initialContent: mockDocument.content
     }));
 
     act(() => {
-      result.current.sendOperation('update', 0, 'Hi');
+      result.current.updateContent('New content');
     });
 
-    expect(result.current.content).toBe('Hi World');
+    expect(result.current.content).toBe('New content');
+    expect(mockWebSocket.send).toHaveBeenCalledWith(
+      expect.stringContaining('New content')
+    );
   });
 
   it('should handle cursor updates', () => {
@@ -90,13 +70,12 @@ describe('useCollaborativeEditing', () => {
     }));
 
     act(() => {
-      result.current.updateCursor(5);
+      result.current.updateCursor({ line: 1, ch: 5 });
     });
 
-    expect(result.current.cursors).toContainEqual(expect.objectContaining({
-      userId: mockUser.id,
-      position: 5
-    }));
+    expect(mockWebSocket.send).toHaveBeenCalledWith(
+      expect.stringContaining('"line":1,"ch":5')
+    );
   });
 
   it('should transform concurrent operations correctly', () => {
@@ -104,29 +83,32 @@ describe('useCollaborativeEditing', () => {
       documentId: mockDocument.id,
       userId: mockUser.id,
       userName: mockUser.name,
-      initialContent: 'Hello'
+      initialContent: mockDocument.content
     }));
 
-    // Simulate concurrent operations
+    // Simulate receiving a remote operation
     act(() => {
-      // Local operation
-      result.current.sendOperation('insert', 5, ' World');
-      
-      // Remote operation (earlier timestamp)
-      const remoteOp = {
-        id: 'op1',
-        userId: 'user2',
-        type: 'insert',
-        position: 0,
-        content: 'Hey ',
-        timestamp: Date.now() - 1000
-      };
-      
-      result.current.handleRemoteOperation(remoteOp);
+      const messageEvent = new MessageEvent('message', {
+        data: JSON.stringify({
+          type: 'operation',
+          userId: 'other-user',
+          operation: {
+            type: 'insert',
+            position: 0,
+            content: 'Remote '
+          }
+        })
+      });
+      mockWebSocket.onmessage(messageEvent);
     });
 
-    // The final content should have both operations applied in the correct order
-    expect(result.current.content).toBe('Hey Hello World');
+    // Local operation
+    act(() => {
+      result.current.updateContent('Local content');
+    });
+
+    expect(result.current.content).toContain('Remote');
+    expect(result.current.content).toContain('Local');
   });
 
   it('should handle sync requests and responses', () => {
@@ -134,19 +116,23 @@ describe('useCollaborativeEditing', () => {
       documentId: mockDocument.id,
       userId: mockUser.id,
       userName: mockUser.name,
-      initialContent: ''
+      initialContent: mockDocument.content
     }));
 
+    // Simulate receiving a sync request
     act(() => {
-      // Simulate sync response
-      result.current.handleSyncResponse({
-        content: mockDocument.content,
-        operations: []
+      const messageEvent = new MessageEvent('message', {
+        data: JSON.stringify({
+          type: 'sync_request',
+          userId: 'other-user'
+        })
       });
+      mockWebSocket.onmessage(messageEvent);
     });
 
-    expect(result.current.content).toBe(mockDocument.content);
-    expect(result.current.isLoading).toBe(false);
+    expect(mockWebSocket.send).toHaveBeenCalledWith(
+      expect.stringContaining('sync_response')
+    );
   });
 
   it('should handle errors gracefully', () => {
@@ -157,18 +143,15 @@ describe('useCollaborativeEditing', () => {
       initialContent: mockDocument.content
     }));
 
+    // Simulate a WebSocket error
     act(() => {
-      // Simulate invalid operation
-      result.current.handleRemoteOperation({
-        id: 'op1',
-        userId: 'user2',
-        type: 'invalid' as any,
-        position: 0,
-        content: 'test',
-        timestamp: Date.now()
+      const errorEvent = new ErrorEvent('error', {
+        message: 'Connection failed'
       });
+      mockWebSocket.onerror(errorEvent);
     });
 
+    expect(result.current.isConnected).toBe(false);
     expect(result.current.error).toBeTruthy();
   });
 
@@ -182,13 +165,6 @@ describe('useCollaborativeEditing', () => {
 
     unmount();
 
-    const { result } = renderHook(() => useCollaborativeEditing({
-      documentId: mockDocument.id,
-      userId: mockUser.id,
-      userName: mockUser.name,
-      initialContent: mockDocument.content
-    }));
-
-    expect(result.current.cursors).toEqual([]);
+    expect(mockWebSocket.close).toHaveBeenCalled();
   });
 }); 

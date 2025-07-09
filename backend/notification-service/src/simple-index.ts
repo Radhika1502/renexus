@@ -1,92 +1,52 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import { logger } from './utils/logger';
 
 const app = express();
-const PORT = process.env.PORT || 4003;
+const port = process.env.PORT || 4003;
 
 // Middleware
-app.use(helmet());
 app.use(cors());
-app.use(morgan('combined'));
 app.use(express.json());
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
-    service: 'notification-service',
-    timestamp: new Date().toISOString(),
-    port: PORT
-  });
+// Mock data
+const notifications = [
+  { id: 1, userId: 1, message: 'New task assigned', read: false },
+  { id: 2, userId: 2, message: 'Task status updated', read: true }
+];
+
+app.get('/health', (_req, res) => {
+  res.json({ status: 'healthy' });
 });
 
-// Basic notification routes
+// Notification endpoints
+app.get('/api/notifications', (req, res) => {
+  const userId = parseInt(req.query.userId as string);
+  const userNotifications = notifications.filter(n => n.userId === userId);
+  res.json(userNotifications);
+});
+
 app.post('/api/notifications', (req, res) => {
-  const { userId, title, message, type } = req.body;
-  
-  logger.info(`Creating notification for user: ${userId}`);
-  
-  if (userId && title && message) {
-    res.json({ 
-      success: true,
-      message: 'Notification created',
-      notification: { 
-        id: Date.now().toString(), 
-        userId, 
-        title, 
-        message, 
-        type: type || 'info',
-        createdAt: new Date().toISOString()
-      }
-    });
+  const { userId, message } = req.body;
+  const newNotification = {
+    id: notifications.length + 1,
+    userId,
+    message,
+    read: false
+  };
+  notifications.push(newNotification);
+  res.status(201).json(newNotification);
+});
+
+app.patch('/api/notifications/:id/read', (req, res) => {
+  const notification = notifications.find(n => n.id === parseInt(req.params.id));
+  if (notification) {
+    notification.read = true;
+    res.json(notification);
   } else {
-    res.status(400).json({ 
-      success: false,
-      message: 'userId, title, and message required'
-    });
+    res.status(404).json({ message: 'Notification not found' });
   }
 });
 
-app.get('/api/notifications/:userId', (req, res) => {
-  const { userId } = req.params;
-  
-  logger.info(`Getting notifications for user: ${userId}`);
-  
-  // Mock notifications
-  res.json({ 
-    success: true,
-    notifications: [
-      {
-        id: '1',
-        userId,
-        title: 'Welcome!',
-        message: 'Welcome to Renexus',
-        type: 'info',
-        read: false,
-        createdAt: new Date().toISOString()
-      }
-    ]
-  });
-});
-
-app.put('/api/notifications/:id/read', (req, res) => {
-  const { id } = req.params;
-  
-  logger.info(`Marking notification ${id} as read`);
-  
-  res.json({ 
-    success: true,
-    message: 'Notification marked as read'
-  });
-});
-
-// Start server
-app.listen(PORT, () => {
-  logger.info(`Notification Service running on port ${PORT}`);
-  logger.info(`Health check: http://localhost:${PORT}/health`);
-});
-
-export default app; 
+app.listen(port, () => {
+  console.log(`Notification service running on port ${port}`);
+}); 

@@ -12,7 +12,7 @@ export function ConnectivityCheck() {
         setApiStatus('checking');
         setApiMessage('Checking API connection...');
         
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
         console.log(`Trying to connect to API at: ${apiUrl}/api/health`);
         
         // Try a simple fetch with no headers first
@@ -38,7 +38,7 @@ export function ConnectivityCheck() {
         
         // Try connecting directly to the root endpoint
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
           const rootResponse = await fetch(apiUrl, { 
             method: 'GET',
             cache: 'no-cache',

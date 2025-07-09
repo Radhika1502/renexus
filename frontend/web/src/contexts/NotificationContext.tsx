@@ -1,23 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
-import { useNotificationSocket } from '../hooks/useNotificationSocket';
-
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  createdAt: string;
-  read: boolean;
-  data?: Record<string, any>;
-}
+import { useNotificationSocket, NotificationData, NotificationUpdate } from '../hooks/useNotificationSocket';
 
 interface NotificationContextType {
-  notifications: Notification[];
+  notifications: NotificationData[];
   unreadCount: number;
   loading: boolean;
-  error: string | null;
+  error: Error | null;
   fetchNotifications: () => Promise<void>;
   markAsRead: (notificationId: string) => Promise<boolean>;
   markAllAsRead: () => Promise<boolean>;
@@ -26,7 +16,7 @@ interface NotificationContextType {
     userId: string;
     title: string;
     message: string;
-    type: string;
+    type: NotificationData['type'];
     data?: Record<string, any>;
   }) => Promise<boolean>;
 }
@@ -52,24 +42,24 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   maxNotifications = 20,
   refreshInterval = 30000,
 }) => {
-  const { user, accessToken } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { user, token } = useAuth();
+  const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchNotifications = async () => {
-    if (!user || !accessToken) return;
+    if (!user || !token) return;
     
     setLoading(true);
     setError(null);
     
     try {
-      const response = await axios.get(
+      const response = await axios.get<{ notifications: NotificationData[] }>(
         `/api/notifications/user/${user.id}`,
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`
+            Authorization: `Bearer ${token}`
           },
           params: {
             limit: maxNotifications,
@@ -80,18 +70,19 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       
       setNotifications(response.data.notifications || []);
       setUnreadCount(
-        (response.data.notifications || []).filter((n: Notification) => !n.read).length
+        (response.data.notifications || []).filter(n => !n.read).length
       );
     } catch (err) {
-      console.error('Failed to fetch notifications', err);
-      setError('Failed to load notifications');
+      const error = err instanceof Error ? err : new Error('Failed to load notifications');
+      console.error('Failed to fetch notifications:', error);
+      setError(error);
     } finally {
       setLoading(false);
     }
   };
 
   const markAsRead = async (notificationId: string): Promise<boolean> => {
-    if (!user || !accessToken) return false;
+    if (!user || !token) return false;
     
     try {
       await axios.put(
@@ -99,7 +90,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         { userId: user.id },
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`
+            Authorization: `Bearer ${token}`
           }
         }
       );
@@ -115,13 +106,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       
       return true;
     } catch (err) {
-      console.error('Failed to mark notification as read', err);
+      const error = err instanceof Error ? err : new Error('Failed to mark notification as read');
+      console.error('Failed to mark notification as read:', error);
+      setError(error);
       return false;
     }
   };
 
   const markAllAsRead = async (): Promise<boolean> => {
-    if (!user || !accessToken) return false;
+    if (!user || !token) return false;
     
     try {
       await axios.put(
@@ -129,7 +122,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         {},
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`
+            Authorization: `Bearer ${token}`
           }
         }
       );
@@ -143,20 +136,22 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       
       return true;
     } catch (err) {
-      console.error('Failed to mark all notifications as read', err);
+      const error = err instanceof Error ? err : new Error('Failed to mark all notifications as read');
+      console.error('Failed to mark all notifications as read:', error);
+      setError(error);
       return false;
     }
   };
 
   const deleteNotification = async (notificationId: string): Promise<boolean> => {
-    if (!user || !accessToken) return false;
+    if (!user || !token) return false;
     
     try {
       await axios.delete(
         `/api/notifications/${notificationId}`,
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`
+            Authorization: `Bearer ${token}`
           },
           data: { userId: user.id }
         }
@@ -176,7 +171,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       
       return true;
     } catch (err) {
-      console.error('Failed to delete notification', err);
+      const error = err instanceof Error ? err : new Error('Failed to delete notification');
+      console.error('Failed to delete notification:', error);
+      setError(error);
       return false;
     }
   };
@@ -185,10 +182,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     userId: string;
     title: string;
     message: string;
-    type: string;
+    type: NotificationData['type'];
     data?: Record<string, any>;
   }): Promise<boolean> => {
-    if (!accessToken) return false;
+    if (!token) return false;
     
     try {
       await axios.post(
@@ -196,87 +193,84 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         notification,
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`
+            Authorization: `Bearer ${token}`
           }
         }
       );
       
-      // Refresh notifications to include the new one
-      await fetchNotifications();
-      
+      // The notification will come back through the WebSocket
       return true;
     } catch (err) {
-      console.error('Failed to send notification', err);
+      const error = err instanceof Error ? err : new Error('Failed to send notification');
+      console.error('Failed to send notification:', error);
+      setError(error);
       return false;
     }
   };
 
-  // Fetch notifications on mount and when user changes
-  useEffect(() => {
-    if (user) {
-      fetchNotifications();
-    }
-  }, [user]);
+  // Handle new notifications from WebSocket
+  const handleNewNotification = (notification: NotificationData) => {
+    setNotifications(prev => {
+      // Check if we already have this notification
+      const exists = prev.some(n => n.id === notification.id);
+      if (exists) return prev;
 
-  // Handle WebSocket notifications
-  const handleNewNotification = (notification: any) => {
-    // Add the new notification to the list
-    setNotifications(prev => [notification, ...prev.slice(0, maxNotifications - 1)]);
-    setUnreadCount(prev => prev + 1);
-  };
-
-  // Handle WebSocket notification updates (read, delete, etc.)
-  const handleNotificationUpdate = (update: any) => {
-    if (update.action === 'read') {
-      // Update a single notification's read status
-      setNotifications(prev => 
-        prev.map(n => n.id === update.notificationId ? { ...n, read: true } : n)
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } 
-    else if (update.action === 'read_all') {
-      // Mark all notifications as read
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-      setUnreadCount(0);
-    }
-    else if (update.action === 'delete') {
-      // Remove a notification
-      const wasUnread = notifications.find(n => n.id === update.notificationId)?.read === false;
-      setNotifications(prev => prev.filter(n => n.id !== update.notificationId));
-      if (wasUnread) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
+      // Add the new notification at the start and maintain the limit
+      const updated = [notification, ...prev].slice(0, maxNotifications);
+      
+      // Update unread count if needed
+      if (!notification.read) {
+        setUnreadCount(count => count + 1);
       }
-    }
+      
+      return updated;
+    });
   };
 
-  // Connect to WebSocket for real-time notifications
-  const { isConnected } = useNotificationSocket({
+  // Handle notification updates from WebSocket
+  const handleNotificationUpdate = (update: NotificationUpdate) => {
+    setNotifications(prev => 
+      prev.map(n => {
+        if (n.id !== update.id) return n;
+        
+        // If the update changes the read status, update the unread count
+        if ('read' in update.changes && update.changes.read !== n.read) {
+          setUnreadCount(count => 
+            update.changes.read ? Math.max(0, count - 1) : count + 1
+          );
+        }
+        
+        return { ...n, ...update.changes };
+      })
+    );
+  };
+
+  // Setup WebSocket connection
+  useNotificationSocket({
     onNotification: handleNewNotification,
     onNotificationUpdate: handleNotificationUpdate,
-    onConnectionChange: (connected) => {
-      // Fetch notifications when connection is established
-      if (connected) {
-        fetchNotifications();
-      }
-    },
-    onError: (error) => {
-      console.error('WebSocket error:', error);
+    onError: (err) => {
+      console.error('Notification socket error:', err);
+      setError(err);
     }
   });
 
-  // Fallback to polling if WebSocket is not connected
+  // Fetch notifications periodically
   useEffect(() => {
-    if (!user || isConnected) return;
-    
-    // Only use polling as a fallback when WebSocket is not connected
-    const interval = setInterval(() => {
-      fetchNotifications();
-    }, refreshInterval);
-    
-    return () => clearInterval(interval);
-  }, [user, refreshInterval, isConnected]);
+    if (!user || !token) return;
 
-  const value = {
+    // Initial fetch
+    fetchNotifications();
+
+    // Setup periodic refresh
+    const intervalId = setInterval(fetchNotifications, refreshInterval);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [user, token, refreshInterval]);
+
+  const value: NotificationContextType = {
     notifications,
     unreadCount,
     loading,

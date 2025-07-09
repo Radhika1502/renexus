@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -15,7 +15,7 @@ import { logger } from './utils/logger';
 dotenv.config();
 
 // Create Express server
-const app = express();
+const app: Application = express();
 const port = process.env.PORT || 4001;
 
 // Configure passport

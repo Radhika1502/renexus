@@ -28,7 +28,7 @@ jest.mock('../../services/auth/auth.middleware', () => ({
 }));
 
 // Mock the db module first to prevent the actual import error
-jest.mock('../../db', () => ({
+jest.mock('../../../packages/database/db', () => ({
   db: dbMock
 }));
 

@@ -104,6 +104,53 @@ export const projectMembers = pgTable("project_members", {
   joinedAt: timestamp("joined_at").defaultNow(),
 });
 
+// Project templates table
+export const projectTemplates = pgTable("project_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  category: varchar("category").default("general"), // general, software, marketing, etc.
+  isPublic: boolean("is_public").default(false),
+  tags: jsonb("tags").default([]),
+  
+  // Project settings to be copied
+  projectSettings: jsonb("project_settings").notNull(), // contains project structure like status, priority, etc.
+  
+  // Template metadata
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  createdById: varchar("created_by_id").references(() => users.id).notNull(),
+  usageCount: integer("usage_count").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Template tasks (tasks that will be created when template is applied)
+export const templateTasks = pgTable("template_tasks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  templateId: uuid("template_id").references(() => projectTemplates.id).notNull(),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  status: varchar("status").notNull().default("todo"),
+  priority: varchar("priority").notNull().default("medium"),
+  estimatedHours: real("estimated_hours"),
+  assigneeRole: varchar("assignee_role"), // role that should be assigned (owner, manager, etc.)
+  parentTemplateTaskId: uuid("parent_template_task_id").references(() => templateTasks.id),
+  orderIndex: integer("order_index").default(0),
+  tags: jsonb("tags").default([]),
+  customFields: jsonb("custom_fields").default({}),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Template task dependencies
+export const templateTaskDependencies = pgTable("template_task_dependencies", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  taskId: uuid("task_id").references(() => templateTasks.id).notNull(),
+  dependsOnTaskId: uuid("depends_on_task_id").references(() => templateTasks.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Versions table (from project-bolt)
 export const versions = pgTable("versions", {
   id: uuid("id").primaryKey().defaultRandom(),

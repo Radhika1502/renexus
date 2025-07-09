@@ -1,11 +1,11 @@
-import { createClient } from 'redis';
+import { createClient, RedisClientType } from 'redis';
 import { logger } from "../../shared/utils/logger";
 
 /**
  * Redis client for notification service
  * Used for storing notifications and pub/sub for WebSocket communication
  */
-export const redisClient = createClient({
+export const redisClient: RedisClientType = createClient({
   url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 

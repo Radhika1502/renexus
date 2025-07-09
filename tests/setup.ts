@@ -73,4 +73,6 @@ afterEach(() => {
       }
     });
   }
-}); 
+});
+
+export { mockDb, testDb, pool }; 

@@ -2,18 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { Button, Badge, Toast, ToastProvider, ToastViewport } from '@renexus/ui-components';
 import { BellRing, CheckCircle, Trash2 } from 'lucide-react';
-import { useNotificationSocket } from "../../../shared/utils/notificationSocket";
+import { useNotificationSocket, NotificationData } from '../../hooks/useNotificationSocket';
 import { useAuth } from '../../hooks/useAuth';
-
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  createdAt: string;
-  read: boolean;
-  data?: Record<string, any>;
-}
 
 interface NotificationCenterProps {
   maxNotifications?: number;
@@ -54,13 +44,13 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
   // Setup WebSocket for real-time notifications
   useNotificationSocket({
-    userId: user?.id || '',
-    accessToken: token || '',
-    onMessage: (data) => {
-      // Refresh notifications when we receive a new one
-      if (data.type === 'notification') {
-        fetchNotifications();
-      }
+    onNotification: (notification) => {
+      // The notification context will handle adding the new notification
+      console.log('Received new notification:', notification);
+    },
+    onNotificationUpdate: (update) => {
+      // The notification context will handle the update
+      console.log('Received notification update:', update);
     },
     onError: (error) => {
       console.error('Notification socket error:', error);
@@ -68,7 +58,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   });
 
   // Get variant based on notification type
-  const getVariant = (type: string) => {
+  const getVariant = (type: NotificationData['type']) => {
     switch (type) {
       case 'success': return 'success';
       case 'warning': return 'warning';
@@ -140,7 +130,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
               <div className="p-4 text-center">Loading notifications...</div>
             )}
             {error && (
-              <div className="p-4 text-red-500">Error loading notifications</div>
+              <div className="p-4 text-red-500">{error.message}</div>
             )}
             {!loading && !error && notifications.length === 0 && (
               <div className="p-4 text-center">No notifications</div>

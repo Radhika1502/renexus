@@ -1,6 +1,9 @@
 import { Database } from '../../packages/database/db';
 import { projects } from '../../packages/database/schema/projects';
 
+const VALID_PROJECT_STATUSES = ['active', 'archived', 'completed', 'on_hold'] as const;
+type ProjectStatus = typeof VALID_PROJECT_STATUSES[number];
+
 export class ProjectService {
   constructor(private db: Database) {}
 
@@ -9,20 +12,38 @@ export class ProjectService {
     description?: string;
     ownerId: string;
   }) {
-    const result = await this.db.insert(projects).values({
-      ...data,
-      status: 'active'
-    });
+    try {
+      const result = await this.db.insert(projects).values({
+        ...data,
+        status: 'active'
+      });
 
-    return result[0];
+      if (!result || result.length === 0) {
+        throw new Error('Failed to create project');
+      }
+
+      return result[0];
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to create project');
+    }
   }
 
   async getProject(id: string) {
-    const result = await this.db.select()
-      .from(projects)
-      .where(projects.id.equals(id));
+    try {
+      const result = await this.db.select()
+        .from(projects)
+        .where(projects.id.equals(id));
 
-    return result[0];
+      return result[0] || null;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to fetch project');
+    }
   }
 
   async updateProject(id: string, data: Partial<{
@@ -30,15 +51,44 @@ export class ProjectService {
     description: string;
     status: string;
   }>) {
-    const result = await this.db.update(projects)
-      .set(data)
-      .where(projects.id.equals(id));
+    try {
+      // Validate status if provided
+      if (data.status && !VALID_PROJECT_STATUSES.includes(data.status as ProjectStatus)) {
+        throw new Error('Invalid project status');
+      }
 
-    return result[0];
+      const result = await this.db.update(projects)
+        .set(data)
+        .where(projects.id.equals(id));
+
+      if (!result || result.length === 0) {
+        throw new Error('Project not found');
+      }
+
+      return result[0];
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to update project');
+    }
   }
 
   async deleteProject(id: string) {
-    await this.db.delete(projects)
-      .where(projects.id.equals(id));
+    try {
+      await this.db.transaction(async (tx) => {
+        const result = await tx.delete(projects)
+          .where(projects.id.equals(id));
+
+        if (!result || result.length === 0) {
+          throw new Error('Project not found');
+        }
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to delete project');
+    }
   }
 } 

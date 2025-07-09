@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -15,7 +15,7 @@ import NotificationWebSocketServer from './websocket';
 dotenv.config();
 
 // Initialize express app
-const app = express();
+const app: Application = express();
 const PORT = process.env.PORT || 4002;
 
 // Middleware

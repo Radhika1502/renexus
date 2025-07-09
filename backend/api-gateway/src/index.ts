@@ -7,6 +7,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 import { logger } from './utils/logger';
 import authRoutes from './routes/auth.routes';
 import notificationRoutes from './routes/notification.routes';
+import projectRoutes from './routes/projects';
 
 // Load environment variables
 dotenv.config();
@@ -30,6 +31,7 @@ app.use('/notifications/ws', createProxyMiddleware({
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/projects', projectRoutes);
 app.use('/api', notificationRoutes);
 
 // Health check endpoint

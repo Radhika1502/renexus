@@ -10,9 +10,11 @@
   "dependencies": {
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
+    "@heroicons/react": "^2.2.0",
     "@mui/icons-material": "^5.17.1",
     "@mui/material": "^5.13.0",
     "@renexus/ui-components": "file:../../packages/ui",
+    "@tanstack/react-query": "^5.81.5",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/web-push": "^3.6.4",
     "@types/winston": "^2.4.4",

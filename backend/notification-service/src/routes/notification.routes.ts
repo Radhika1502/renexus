@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import { verifyToken } from '../middleware/auth';
 import {
@@ -10,7 +10,7 @@ import {
   removeNotification
 } from '../controllers/notification.controller';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 /**
  * @openapi
@@ -141,4 +141,4 @@ router.delete(
   removeNotification
 );
 
-export const notificationRoutes = router;
+export const notificationRoutes: Router = router;

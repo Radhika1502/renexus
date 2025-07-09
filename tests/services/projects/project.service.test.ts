@@ -1,35 +1,26 @@
 import { describe, it, expect, beforeEach, jest, afterEach } from '@jest/globals';
-import { ProjectService } from '../../../backend/services/projects/project.service';
-import { db } from '../../../packag../packages/database/db';
+import { ProjectService } from '@services/projects/project.service';
+import { db } from '@packages/database/db';
+import { Project } from '@packages/api-types/project';
 
 // Mock the database
-jest.mock('../../../packag../packages/database/db', () => ({
+jest.mock('@packages/database/db', () => ({
   db: {
     insert: jest.fn().mockReturnThis(),
     values: jest.fn().mockReturnThis(),
-    returning: jest.fn().mockResolvedValue([{ id: 'test-project-id' }]),
-    query: {
-      projects: {
-        findFirst: jest.fn(),
-        findMany: jest.fn(),
-      }
-    },
-    update: jest.fn().mockReturnThis(),
-    set: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),
     from: jest.fn().mockReturnThis(),
-    count: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    offset: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
+    set: jest.fn().mockReturnThis(),
+    delete: jest.fn().mockReturnThis(),
+    execute: jest.fn()
   }
 }));
 
 describe('ProjectService', () => {
   let projectService: ProjectService;
-  const mockProject = {
+  const mockProject: Project = {
     id: 'test-project-id',
     name: 'Test Project',
     description: 'Test Description',
@@ -58,17 +49,16 @@ describe('ProjectService', () => {
         createdById: 'test-user-id',
       };
 
-      (db.insert as jest.Mock).mockReturnThis();
-      (db.values as jest.Mock).mockReturnThis();
-      (db.returning as jest.Mock).mockResolvedValue([mockProject]);
+      const mockValues = jest.fn().mockResolvedValue([mockProject]);
+      const mockInsert = jest.fn().mockReturnValue({ values: mockValues });
+      (db.insert as jest.Mock).mockImplementation(mockInsert);
 
       // Act
       const result = await projectService.createProject(projectData);
 
       // Assert
-      expect(db.insert).toHaveBeenCalled();
-      expect(db.values).toHaveBeenCalled();
-      expect(db.returning).toHaveBeenCalled();
+      expect(mockInsert).toHaveBeenCalled();
+      expect(mockValues).toHaveBeenCalled();
       expect(result).toEqual(mockProject);
     });
   });
@@ -79,13 +69,18 @@ describe('ProjectService', () => {
       const projectId = 'test-project-id';
       const tenantId = 'test-tenant-id';
 
-      (db.query.projects.findFirst as jest.Mock).mockResolvedValue(mockProject);
+      const mockWhere = jest.fn().mockResolvedValue([mockProject]);
+      const mockFrom = jest.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = jest.fn().mockReturnValue({ from: mockFrom });
+      (db.select as jest.Mock).mockImplementation(mockSelect);
 
       // Act
       const result = await projectService.getProjectById(projectId, tenantId);
 
       // Assert
-      expect(db.query.projects.findFirst).toHaveBeenCalled();
+      expect(mockSelect).toHaveBeenCalled();
+      expect(mockFrom).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalled();
       expect(result).toEqual(mockProject);
     });
 
@@ -94,13 +89,18 @@ describe('ProjectService', () => {
       const projectId = 'non-existent-id';
       const tenantId = 'test-tenant-id';
 
-      (db.query.projects.findFirst as jest.Mock).mockResolvedValue(null);
+      const mockWhere = jest.fn().mockResolvedValue(null);
+      const mockFrom = jest.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = jest.fn().mockReturnValue({ from: mockFrom });
+      (db.select as jest.Mock).mockImplementation(mockSelect);
 
       // Act
       const result = await projectService.getProjectById(projectId, tenantId);
 
       // Assert
-      expect(db.query.projects.findFirst).toHaveBeenCalled();
+      expect(mockSelect).toHaveBeenCalled();
+      expect(mockFrom).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalled();
       expect(result).toBeNull();
     });
   });
@@ -115,23 +115,18 @@ describe('ProjectService', () => {
         description: 'Updated Description',
       };
 
-      (db.update as jest.Mock).mockReturnThis();
-      (db.set as jest.Mock).mockReturnThis();
-      (db.where as jest.Mock).mockReturnThis();
-      (db.returning as jest.Mock).mockResolvedValue([{
-        ...mockProject,
-        name: 'Updated Project Name',
-        description: 'Updated Description',
-      }]);
+      const mockWhere = jest.fn().mockResolvedValue([mockProject]);
+      const mockSet = jest.fn().mockReturnValue({ where: mockWhere });
+      const mockUpdate = jest.fn().mockReturnValue({ set: mockSet });
+      (db.update as jest.Mock).mockImplementation(mockUpdate);
 
       // Act
       const result = await projectService.updateProject(projectId, tenantId, updateData);
 
       // Assert
-      expect(db.update).toHaveBeenCalled();
-      expect(db.set).toHaveBeenCalled();
-      expect(db.where).toHaveBeenCalled();
-      expect(db.returning).toHaveBeenCalled();
+      expect(mockUpdate).toHaveBeenCalled();
+      expect(mockSet).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalled();
       expect(result.name).toBe('Updated Project Name');
       expect(result.description).toBe('Updated Description');
     });
@@ -143,16 +138,16 @@ describe('ProjectService', () => {
       const projectId = 'test-project-id';
       const tenantId = 'test-tenant-id';
 
-      (db.delete as jest.Mock).mockReturnThis();
-      (db.where as jest.Mock).mockReturnThis();
-      (db.returning as jest.Mock).mockResolvedValue([mockProject]);
+      const mockWhere = jest.fn().mockResolvedValue([mockProject]);
+      const mockDelete = jest.fn().mockReturnValue({ where: mockWhere });
+      (db.delete as jest.Mock).mockImplementation(mockDelete);
 
       // Act
       const result = await projectService.deleteProject(projectId, tenantId);
 
       // Assert
-      expect(db.delete).toHaveBeenCalled();
-      expect(db.where).toHaveBeenCalled();
+      expect(mockDelete).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalled();
       expect(result).toEqual({ success: true });
     });
   });
@@ -165,17 +160,20 @@ describe('ProjectService', () => {
       const limit = 10;
       const mockProjects = [mockProject, { ...mockProject, id: 'test-project-id-2' }];
 
-      (db.query.projects.findMany as jest.Mock).mockResolvedValue(mockProjects);
-      (db.select as jest.Mock).mockReturnThis();
-      (db.from as jest.Mock).mockReturnThis();
-      (db.where as jest.Mock).mockReturnThis();
+      const mockWhere = jest.fn().mockResolvedValue(mockProjects);
+      const mockFrom = jest.fn().mockReturnValue({ where: mockWhere });
+      const mockSelect = jest.fn().mockReturnValue({ from: mockFrom });
+      (db.select as jest.Mock).mockImplementation(mockSelect);
+
       (db.count as jest.Mock).mockResolvedValue([{ count: 2 }]);
 
       // Act
       const result = await projectService.getProjectsByTenant(tenantId, page, limit);
 
       // Assert
-      expect(db.query.projects.findMany).toHaveBeenCalled();
+      expect(mockSelect).toHaveBeenCalled();
+      expect(mockFrom).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalled();
       expect(result.data).toEqual(mockProjects);
       expect(result.pagination).toEqual({
         total: 2,

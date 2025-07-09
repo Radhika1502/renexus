@@ -1,10 +1,10 @@
-import express from 'express';
+import express, { Router } from 'express';
 import passport from 'passport';
 import { body } from 'express-validator';
 import { AuthController } from '../controllers/auth.controller';
 import { validateRequest } from '../middleware/validateRequest';
 
-const router = express.Router();
+const router: Router = express.Router();
 const authController = new AuthController();
 
 /**

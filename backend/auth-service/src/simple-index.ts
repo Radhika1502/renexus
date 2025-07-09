@@ -1,80 +1,72 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import { logger } from './utils/logger';
 
 const app = express();
-const PORT = process.env.PORT || 4001;
+const port = process.env.PORT || 4001;
 
 // Middleware
-app.use(helmet());
 app.use(cors());
-app.use(morgan('combined'));
 app.use(express.json());
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
-    service: 'auth-service',
-    timestamp: new Date().toISOString(),
-    port: PORT
-  });
+// Mock data
+const users = [
+  { id: 1, username: 'john.doe', email: 'john@example.com', role: 'admin' },
+  { id: 2, username: 'jane.smith', email: 'jane@example.com', role: 'user' }
+];
+
+app.get('/health', (_req, res) => {
+  res.json({ status: 'healthy' });
 });
 
-// Basic auth routes
+// Mock authentication endpoints
 app.post('/api/auth/login', (req, res) => {
-  const { email, password } = req.body;
+  const { username, password } = req.body;
   
-  logger.info(`Login attempt for email: ${email}`);
-  
-  // Mock authentication
-  if (email && password) {
-    res.json({ 
-      success: true,
-      message: 'Login successful',
-      user: { id: '1', email, name: 'Test User' },
-      token: 'mock-jwt-token'
+  // Simple mock authentication
+  const user = users.find(u => u.username === username);
+  if (user) {
+    res.json({
+      token: 'mock_jwt_token',
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
     });
   } else {
-    res.status(400).json({ 
-      success: false,
-      message: 'Email and password required'
-    });
+    res.status(401).json({ message: 'Invalid credentials' });
   }
 });
 
 app.post('/api/auth/register', (req, res) => {
-  const { email, password, name } = req.body;
+  const { username, email, password } = req.body;
   
-  logger.info(`Registration attempt for email: ${email}`);
+  // Simple mock registration
+  const newUser = {
+    id: users.length + 1,
+    username,
+    email,
+    role: 'user'
+  };
   
-  if (email && password && name) {
-    res.json({ 
-      success: true,
-      message: 'Registration successful',
-      user: { id: '2', email, name }
-    });
-  } else {
-    res.status(400).json({ 
-      success: false,
-      message: 'Email, password, and name required'
-    });
-  }
-});
-
-app.get('/api/auth/me', (req, res) => {
-  res.json({ 
-    success: true,
-    user: { id: '1', email: 'test@example.com', name: 'Test User' }
+  users.push(newUser);
+  res.status(201).json({
+    message: 'User registered successfully',
+    user: newUser
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  logger.info(`Auth Service running on port ${PORT}`);
-  logger.info(`Health check: http://localhost:${PORT}/health`);
+app.get('/api/auth/me', (_req, res) => {
+  // Mock authenticated user
+  res.json({
+    id: 1,
+    username: 'john.doe',
+    email: 'john@example.com',
+    role: 'admin'
+  });
 });
 
-export default app; 
+app.listen(port, () => {
+  console.log(`Auth service running on port ${port}`);
+}); 

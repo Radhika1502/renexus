@@ -2,6 +2,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { WebSocket as WS, WebSocketServer as WSS } from 'ws';
 import { presenceManager, PresenceData } from './presence';
 import { IncomingMessage } from 'http';
+import { verifyToken } from '../services/auth';
+import { logger } from '../utils/logger';
+
+// Constants
+const AUTH_TIMEOUT_MS = 30000; // 30 seconds
+const PING_INTERVAL_MS = 30000; // 30 seconds
+const PONG_TIMEOUT_MS = 10000; // 10 seconds
 
 // Type aliases for clarity
 type ClientId = string;
@@ -18,6 +25,10 @@ interface ExtendedPresenceData extends PresenceData {
 interface ClientConnection {
   ws: WS;
   userId: string | null;
+  isAlive: boolean;
+  authTimer?: NodeJS.Timeout;
+  pingTimer?: NodeJS.Timeout;
+  pongTimer?: NodeJS.Timeout;
 }
 
 // Base WebSocket message type
@@ -115,10 +126,11 @@ interface LeaveRoomMessage extends WebSocketMessage {
 
 class WebSocketServer {
   private wss: WSS;
-  private clients: Map<string, WS> = new Map();
-  private clientUserMap: Map<string, string>;
+  private clients: Map<ClientId, ClientConnection> = new Map();
+  private clientUserMap: Map<ClientId, string>;
   private roomClients: Map<RoomId, Set<string>>;
   private userRooms: Map<string, Set<string>>;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
 
   constructor(server: any) {
     this.wss = new WSS({ server });
@@ -126,61 +138,141 @@ class WebSocketServer {
     this.roomClients = new Map();
     this.userRooms = new Map();
     this.setupEventHandlers();
+    this.startHeartbeat();
   }
 
   private setupEventHandlers() {
     this.wss.on('connection', (ws: WS, request: IncomingMessage) => {
       const clientId = uuidv4();
-      this.clients.set(clientId, ws);
-      console.log(`Client connected: ${clientId}`);
+      const clientConnection: ClientConnection = {
+        ws,
+        userId: null,
+        isAlive: true
+      };
 
-      ws.on('message', (data: WS.Data) => {
-        try {
-          const message = JSON.parse(data.toString()) as WebSocketMessage;
-          this.handleMessage(clientId, message);
-        } catch (error) {
-          console.error(`Failed to parse message from client ${clientId}:`, error);
+      // Set authentication timeout
+      clientConnection.authTimer = setTimeout(() => {
+        logger.warn(`Client ${clientId} failed to authenticate within ${AUTH_TIMEOUT_MS}ms`);
+        this.terminateConnection(clientId, 4001, 'Authentication timeout');
+      }, AUTH_TIMEOUT_MS);
+
+      // Setup ping-pong for this client
+      clientConnection.pingTimer = setInterval(() => {
+        if (!clientConnection.isAlive) {
+          logger.warn(`Client ${clientId} failed to respond to ping`);
+          return this.terminateConnection(clientId, 4002, 'Connection timeout');
+        }
+
+        clientConnection.isAlive = false;
+        ws.ping();
+
+        clientConnection.pongTimer = setTimeout(() => {
+          if (!clientConnection.isAlive) {
+            logger.warn(`Client ${clientId} failed to respond to ping within ${PONG_TIMEOUT_MS}ms`);
+            this.terminateConnection(clientId, 4002, 'Pong timeout');
+          }
+        }, PONG_TIMEOUT_MS);
+      }, PING_INTERVAL_MS);
+
+      // Handle pong responses
+      ws.on('pong', () => {
+        clientConnection.isAlive = true;
+        if (clientConnection.pongTimer) {
+          clearTimeout(clientConnection.pongTimer);
         }
       });
 
-      ws.on('close', () => {
+      this.clients.set(clientId, clientConnection);
+      logger.info(`Client connected: ${clientId}`);
+
+      ws.on('message', async (data: WS.Data) => {
+        try {
+          const message = JSON.parse(data.toString()) as WebSocketMessage;
+          
+          // Handle authentication message separately
+          if (message.type === 'AUTHENTICATE') {
+            await this.handleAuthentication(clientId, message as AuthenticateMessage);
+            return;
+          }
+
+          // All other messages require authentication
+          if (!this.clientUserMap.has(clientId)) {
+            this.sendError(clientId, 'Not authenticated');
+            return;
+          }
+
+          await this.handleMessage(clientId, message);
+        } catch (error) {
+          logger.error(`Failed to handle message from client ${clientId}:`, error);
+          this.sendError(clientId, 'Invalid message format');
+        }
+      });
+
+      ws.on('close', (code: number, reason: string) => {
+        logger.info(`Client ${clientId} disconnected:`, { code, reason });
         this.handleDisconnect(clientId);
       });
 
       ws.on('error', (error: Error) => {
-        console.error(`WebSocket error for client ${clientId}:`, error);
+        logger.error(`WebSocket error for client ${clientId}:`, error);
         this.handleDisconnect(clientId);
       });
     });
   }
 
-  private handleMessage(clientId: string, message: WebSocketMessage) {
-    const { type, payload } = message;
-    const client = this.clients.get(clientId);
-    if (!client) return;
+  private async handleAuthentication(clientId: string, message: AuthenticateMessage) {
+    const clientConnection = this.clients.get(clientId);
+    if (!clientConnection) return;
 
-    if (this.clientUserMap.has(clientId)) {
-      const userId = this.clientUserMap.get(clientId)!;
-      presenceManager.updatePresence(userId, clientId, {
-        lastActive: Date.now(),
-      } as any);
+    try {
+      // Verify the token from the message payload
+      const userId = await verifyToken(message.payload.userId);
+      if (!userId) {
+        this.sendError(clientId, 'Invalid authentication token');
+        this.terminateConnection(clientId, 4003, 'Authentication failed');
+        return;
+      }
+
+      // Clear the auth timeout since we're now authenticated
+      if (clientConnection.authTimer) {
+        clearTimeout(clientConnection.authTimer);
+      }
+
+      this.clientUserMap.set(clientId, userId);
+      presenceManager.addClient(clientId, userId, clientConnection.ws);
+      logger.info(`Client ${clientId} authenticated as user ${userId}`);
+
+      // Send success response
+      this.sendMessage(clientId, {
+        type: 'AUTHENTICATE_SUCCESS',
+        payload: { userId }
+      });
+    } catch (error) {
+      logger.error(`Authentication failed for client ${clientId}:`, error);
+      this.sendError(clientId, 'Authentication failed');
+      this.terminateConnection(clientId, 4003, 'Authentication failed');
     }
+  }
 
-    switch (type) {
-      case 'AUTHENTICATE': {
-        const { userId } = payload;
-        if (typeof userId === 'string') {
-          this.clientUserMap.set(clientId, userId);
-          presenceManager.addClient(clientId, userId, client);
-          console.log(`Client ${clientId} authenticated as user ${userId}`);
-        }
-        break;
-      }
-      case 'TASK_UPDATE': {
-        const roomId = payload.taskId;
-        if (roomId && this.clientUserMap.has(clientId)) {
-          const userId = this.clientUserMap.get(clientId)!;
-          this.broadcastToRoom(roomId, {
+  private async handleMessage(clientId: string, message: WebSocketMessage) {
+    const clientConnection = this.clients.get(clientId);
+    if (!clientConnection) return;
+
+    const userId = this.clientUserMap.get(clientId)!;
+    presenceManager.updatePresence(userId, clientId, {
+      lastActive: Date.now(),
+    } as any);
+
+    try {
+      switch (message.type) {
+        case 'TASK_UPDATE': {
+          const { taskId } = message.payload;
+          if (!taskId) {
+            this.sendError(clientId, 'Invalid task ID');
+            return;
+          }
+
+          this.broadcastToRoom(taskId, {
             ...message,
             metadata: {
               ...message.metadata,
@@ -189,82 +281,163 @@ class WebSocketServer {
               clientId,
             },
           }, clientId);
+          break;
         }
-        break;
-      }
-      case 'TYPING_INDICATOR': {
-        const roomId = payload.taskId;
-        if (roomId && this.clientUserMap.has(clientId)) {
-          const userId = this.clientUserMap.get(clientId)!;
+
+        case 'TYPING_INDICATOR': {
+          const { taskId, isTyping } = message.payload;
+          if (!taskId) {
+            this.sendError(clientId, 'Invalid task ID');
+            return;
+          }
+
           presenceManager.updatePresence(userId, clientId, {
-            isTyping: payload.isTyping,
-            activeTaskId: roomId,
+            isTyping,
+            activeTaskId: taskId
           } as any);
-          this.broadcastToRoom(roomId, message, clientId);
-        }
-        break;
-      }
-      case 'PRESENCE_UPDATE': {
-        if (this.clientUserMap.has(clientId)) {
-          const userId = this.clientUserMap.get(clientId)!;
-          presenceManager.updatePresence(userId, clientId, payload as any);
-        }
-        break;
-      }
-      case 'COMMENT_ADD': {
-        const roomId = payload.taskId;
-        if (roomId && this.clientUserMap.has(clientId)) {
-          const userId = this.clientUserMap.get(clientId)!;
-          this.broadcastToRoom(roomId, {
+
+          this.broadcastToRoom(taskId, {
             ...message,
             metadata: {
-              ...message.metadata,
               timestamp: Date.now(),
               userId,
               clientId,
             },
           }, clientId);
+          break;
         }
-        break;
-      }
-      case 'JOIN_ROOM': {
-        const { roomId } = payload;
-        if (roomId && typeof roomId === 'string') {
+
+        case 'JOIN_ROOM': {
+          const { roomId } = message.payload;
+          if (!roomId) {
+            this.sendError(clientId, 'Invalid room ID');
+            return;
+          }
           this.handleRoomJoin(clientId, roomId);
+          break;
         }
-        break;
-      }
-      case 'LEAVE_ROOM': {
-        const { roomId } = payload;
-        if (roomId && typeof roomId === 'string') {
+
+        case 'LEAVE_ROOM': {
+          const { roomId } = message.payload;
+          if (!roomId) {
+            this.sendError(clientId, 'Invalid room ID');
+            return;
+          }
           this.handleRoomLeave(clientId, roomId);
+          break;
         }
-        break;
+
+        default:
+          this.sendError(clientId, 'Unknown message type');
       }
-      default:
-        console.log(`Unknown message type from ${clientId}: ${type}`);
-        break;
+    } catch (error) {
+      logger.error(`Error handling message type ${message.type}:`, error);
+      this.sendError(clientId, 'Internal server error');
     }
   }
 
   private handleDisconnect(clientId: string) {
-    const client = this.clients.get(clientId);
-    if (!client) return;
+    const clientConnection = this.clients.get(clientId);
+    if (!clientConnection) return;
 
-    if (this.clientUserMap.has(clientId)) {
-      const userId = this.clientUserMap.get(clientId)!;
+    // Clear all timers
+    if (clientConnection.authTimer) clearTimeout(clientConnection.authTimer);
+    if (clientConnection.pingTimer) clearInterval(clientConnection.pingTimer);
+    if (clientConnection.pongTimer) clearTimeout(clientConnection.pongTimer);
+
+    // Remove from presence manager if authenticated
+    const userId = this.clientUserMap.get(clientId);
+    if (userId) {
       presenceManager.removeClient(clientId, userId);
       this.clientUserMap.delete(clientId);
+
+      // Leave all rooms
+      const rooms = this.userRooms.get(userId);
+      if (rooms) {
+        rooms.forEach(roomId => this.handleRoomLeave(clientId, roomId));
+      }
     }
 
-    this.roomClients.forEach((clients, roomId) => {
-      if (clients.has(clientId)) {
-        this.handleRoomLeave(clientId, roomId);
+    // Clean up client connection
+    this.clients.delete(clientId);
+    logger.info(`Client ${clientId} cleanup completed`);
+  }
+
+  private terminateConnection(clientId: string, code: number, reason: string) {
+    const clientConnection = this.clients.get(clientId);
+    if (!clientConnection) return;
+
+    try {
+      clientConnection.ws.close(code, reason);
+    } catch (error) {
+      logger.error(`Error closing connection for client ${clientId}:`, error);
+      try {
+        clientConnection.ws.terminate();
+      } catch (terminateError) {
+        logger.error(`Error terminating connection for client ${clientId}:`, terminateError);
       }
+    }
+
+    this.handleDisconnect(clientId);
+  }
+
+  private sendError(clientId: string, message: string) {
+    this.sendMessage(clientId, {
+      type: 'ERROR',
+      payload: { message }
+    });
+  }
+
+  private sendMessage(clientId: string, message: WebSocketMessage) {
+    const clientConnection = this.clients.get(clientId);
+    if (!clientConnection) return;
+
+    try {
+      clientConnection.ws.send(JSON.stringify(message));
+    } catch (error) {
+      logger.error(`Error sending message to client ${clientId}:`, error);
+      this.handleDisconnect(clientId);
+    }
+  }
+
+  private startHeartbeat() {
+    // Clear any existing heartbeat
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+    }
+
+    // Start new heartbeat
+    this.heartbeatInterval = setInterval(() => {
+      this.clients.forEach((client, clientId) => {
+        if (!client.isAlive) {
+          return this.terminateConnection(clientId, 4002, 'Heartbeat timeout');
+        }
+        client.isAlive = false;
+        try {
+          client.ws.ping();
+        } catch (error) {
+          logger.error(`Error sending ping to client ${clientId}:`, error);
+          this.handleDisconnect(clientId);
+        }
+      });
+    }, PING_INTERVAL_MS);
+  }
+
+  public shutdown() {
+    // Clear heartbeat interval
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+    }
+
+    // Close all client connections
+    this.clients.forEach((client, clientId) => {
+      this.terminateConnection(clientId, 1001, 'Server shutting down');
     });
 
-    this.clients.delete(clientId);
-    console.log(`Client disconnected: ${clientId}`);
+    // Close the WebSocket server
+    this.wss.close(() => {
+      logger.info('WebSocket server shut down');
+    });
   }
 
   public broadcastToRoom(roomId: RoomId, message: WebSocketMessage, excludeClientId?: string) {
@@ -273,8 +446,8 @@ class WebSocketServer {
       roomClients.forEach(clientId => {
         if (clientId !== excludeClientId) {
           const client = this.clients.get(clientId);
-          if (client && client.readyState === WS.OPEN) {
-            client.send(JSON.stringify(message));
+          if (client && client.ws.readyState === WS.OPEN) {
+            client.ws.send(JSON.stringify(message));
           }
         }
       });
@@ -285,8 +458,8 @@ class WebSocketServer {
     this.clientUserMap.forEach((uid, clientId) => {
       if (uid === userId) {
         const client = this.clients.get(clientId);
-        if (client && client.readyState === WS.OPEN) {
-          client.send(JSON.stringify(message));
+        if (client && client.ws.readyState === WS.OPEN) {
+          client.ws.send(JSON.stringify(message));
         }
       }
     });

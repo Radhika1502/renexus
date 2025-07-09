@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken';
-
-4import bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabaseClient } from '../../../../packages/database/client';
 import { withTransaction, TransactionContext } from '../../../../packages/database/transaction-manager';

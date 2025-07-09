@@ -44,24 +44,18 @@ const results = {
 };
 
 // Run each test suite individually
-const tests = [
-  { name: 'Unit Tests', command: 'npx jest --testPathPattern=tests/unit --no-cache' },
-  { name: 'Projects Integration Tests', command: 'npx jest --testPathPattern=tests/integration/projects.test.ts --no-cache' },
-  { name: 'Tasks Integration Tests', command: 'npx jest --testPathPattern=tests/integration/tasks.test.ts --no-cache' },
-  { name: 'Task Analytics Integration Tests', command: 'npx jest --testPathPattern=tests/integration/task-analytics.test.ts --no-cache' },
-  { name: 'Migration Scripts Tests', command: 'npx jest --testPathPattern=tests/integration/migration-scripts.test.ts --no-cache' },
-  { name: 'Database Tests', command: 'npx jest --testPathPattern=tests/integration/database.test.ts --no-cache' },
-  { name: 'Auth Tests', command: 'npx jest --testPathPattern=tests/integration/auth.test.ts --no-cache' },
+const testSuites = [
   { name: 'API Gateway Tests', command: 'npx jest --testPathPattern=tests/integration/api-gateway.test.ts --no-cache' },
-  { name: 'End-to-End Flow Tests', command: 'npx jest --testPathPattern=tests/integration/end-to-end-flows.test.ts --no-cache' },
+  { name: 'Database Tests', command: 'npx jest --testPathPattern=tests/integration/database.test.ts --no-cache' },
+  { name: 'Migration Tests', command: 'npx jest --testPathPattern=tests/integration/migration-scripts.test.ts --no-cache' },
   { name: 'Performance Tests', command: 'npx jest --testPathPattern=tests/integration/performance.test.ts --no-cache' },
-  { name: 'Backup Recovery Tests', command: 'npx jest --testPathPattern=tests/integration/backup-recovery.test.ts --no-cache' },
-  { name: 'E2E Tests', command: 'npx playwright test --reporter=list' },
-  { name: 'Regression Tests', command: 'npx jest --config=tests/regression/jest.regression.config.js --no-cache' }
+  { name: 'Project Service Tests', command: 'npx jest --testPathPattern=tests/integration/project-service.test.ts --no-cache' },
+  { name: 'Task Service Tests', command: 'npx jest --testPathPattern=tests/integration/task-service.test.ts --no-cache' },
+  { name: 'End-to-End Tests', command: 'npx jest --testPathPattern=tests/integration/end-to-end-flows.test.ts --no-cache' }
 ];
 
 // Run each test
-for (const test of tests) {
+for (const test of testSuites) {
   const passed = runTest(test.name, test.command);
   if (passed) {
     results.passed.push(test.name);

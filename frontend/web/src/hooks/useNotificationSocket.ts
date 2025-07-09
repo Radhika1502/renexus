@@ -1,11 +1,32 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './useAuth';
 
+export interface NotificationData {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  createdAt: string;
+  read: boolean;
+  data?: Record<string, any>;
+}
+
+export interface NotificationUpdate {
+  id: string;
+  changes: Partial<NotificationData>;
+}
+
+interface WebSocketMessage {
+  type: 'notification' | 'notification_update' | 'connection';
+  data: NotificationData | NotificationUpdate | { status: string };
+  error?: string;
+}
+
 interface NotificationSocketOptions {
-  onNotification?: (notification: any) => void;
-  onNotificationUpdate?: (update: any) => void;
+  onNotification?: (notification: NotificationData) => void;
+  onNotificationUpdate?: (update: NotificationUpdate) => void;
   onConnectionChange?: (isConnected: boolean) => void;
-  onError?: (error: any) => void;
+  onError?: (error: Error) => void;
   autoReconnect?: boolean;
   reconnectInterval?: number;
   maxReconnectAttempts?: number;
@@ -47,6 +68,28 @@ export const useNotificationSocket = ({
     }
   }, []);
 
+  // Validate notification data
+  const validateNotification = (data: any): data is NotificationData => {
+    return (
+      typeof data === 'object' &&
+      typeof data.id === 'string' &&
+      typeof data.title === 'string' &&
+      typeof data.message === 'string' &&
+      ['info', 'success', 'warning', 'error'].includes(data.type) &&
+      typeof data.createdAt === 'string' &&
+      typeof data.read === 'boolean'
+    );
+  };
+
+  // Validate notification update
+  const validateNotificationUpdate = (data: any): data is NotificationUpdate => {
+    return (
+      typeof data === 'object' &&
+      typeof data.id === 'string' &&
+      typeof data.changes === 'object'
+    );
+  };
+
   // Connect to WebSocket server
   const connect = useCallback(() => {
     if (!user || !accessToken) return;
@@ -83,7 +126,7 @@ export const useNotificationSocket = ({
           
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
-          }, reconnectInterval);
+          }, reconnectInterval * Math.pow(2, reconnectAttemptsRef.current - 1)); // Exponential backoff
         }
       };
 
@@ -96,24 +139,46 @@ export const useNotificationSocket = ({
 
       socket.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data);
+          const message = JSON.parse(event.data) as WebSocketMessage;
           
           // Handle different message types
-          switch (data.type) {
-            case 'notification':
-              onNotification?.(data.data);
+          switch (message.type) {
+            case 'notification': {
+              const notification = message.data as NotificationData;
+              if (validateNotification(notification)) {
+                onNotification?.(notification);
+              } else {
+                console.error('Invalid notification data:', notification);
+              }
               break;
-            case 'notification_update':
-              onNotificationUpdate?.(data.data);
+            }
+            case 'notification_update': {
+              const update = message.data as NotificationUpdate;
+              if (validateNotificationUpdate(update)) {
+                onNotificationUpdate?.(update);
+              } else {
+                console.error('Invalid notification update:', update);
+              }
               break;
+            }
             case 'connection':
-              console.log('WebSocket connection status:', data.data);
+              console.log('WebSocket connection status:', message.data);
               break;
             default:
-              console.log('Unknown WebSocket message type:', data.type);
+              console.warn('Unknown WebSocket message type:', message.type);
+          }
+
+          // Handle error field if present
+          if (message.error) {
+            const wsError = new Error(message.error);
+            setError(wsError);
+            onError?.(wsError);
           }
         } catch (err) {
           console.error('Error processing WebSocket message:', err);
+          const error = err instanceof Error ? err : new Error('Failed to process WebSocket message');
+          setError(error);
+          onError?.(error);
         }
       };
     } catch (err) {
